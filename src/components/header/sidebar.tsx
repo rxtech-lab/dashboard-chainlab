@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Config, SidebarItems } from "@/config/config";
 import { GalleryVerticalEnd } from "lucide-react";
+import Link from "next/link";
 
 export function AppSidebar() {
   return (
@@ -20,7 +21,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="#">
+              <div>
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <GalleryVerticalEnd className="size-4" />
                 </div>
@@ -28,7 +29,7 @@ export function AppSidebar() {
                   <span className="font-semibold">{Config.App.name}</span>
                   <span className="">{Config.App.version}</span>
                 </div>
-              </a>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -42,10 +43,10 @@ export function AppSidebar() {
                 {nav.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
-                      <a href={item.url}>
+                      <Link href={item.url}>
                         {item.icon}
                         {item.title}
-                      </a>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
