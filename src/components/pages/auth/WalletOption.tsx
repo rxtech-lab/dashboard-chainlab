@@ -63,7 +63,7 @@ export function WalletOption({ provider, isEnabled }: WalletOptionProps) {
   };
 
   return (
-    <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-gray-50 transition-colors flex-wrap gap-4">
+    <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-gray-50 transition-colors flex-wrap gap-4 bg-white">
       <div className="flex items-center gap-5 flex-wrap">
         <div
           className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"

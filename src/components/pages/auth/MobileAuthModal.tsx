@@ -29,7 +29,7 @@ export function MobileAuthModal({ sdk }: Props) {
       }}
       className="w-full"
     >
-      <Card className="w-full min-h-[500px] !shadow-xl rounded-3xl overflow-hidden border-0">
+      <Card className="w-full min-h-[500px] !shadow-xl rounded-3xl overflow-hidden border-t border-l border-r md:border-0">
         <div className="flex flex-col w-full h-full">
           {/* Top Panel */}
           <motion.div
@@ -49,7 +49,7 @@ export function MobileAuthModal({ sdk }: Props) {
               duration: ANIMATION_CONFIG.duration,
               ease: ANIMATION_CONFIG.ease,
             }}
-            className="w-full p-8 flex flex-col bg-gradient-to-br from-slate-50 to-slate-100"
+            className="w-full p-8 flex flex-col bg-gradient-to-br from-slate-50 to-slate-50"
           >
             <div className="grid gap-4">
               {sdk.walletProviders.map((provider) => (
