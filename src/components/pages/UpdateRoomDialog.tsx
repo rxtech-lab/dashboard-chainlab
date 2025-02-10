@@ -1,11 +1,9 @@
 "use client";
 
 import { NativeModal } from "@/context/NativeDialog";
-import { Plus } from "lucide-react";
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { Button } from "../ui/button";
 import {
   Form,
@@ -16,18 +14,24 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Input } from "../ui/input";
-import { createAttendanceRoom } from "@/app/(protected)/actions";
+import { updateAttendanceRoomName } from "@/app/(protected)/actions";
 import { useToast } from "@/hooks/use-toast";
 import { formSchema, FormValues } from "./createRoom.type";
 import { useRouter } from "next/navigation";
+import { Pencil } from "lucide-react";
 
-export default function CreateRoomDialog() {
+interface UpdateRoomDialogProps {
+  roomId: number;
+  currentAlias: string;
+}
+
+export default function UpdateRoomDialog({ roomId, currentAlias }: UpdateRoomDialogProps) {
   const [open, setOpen] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema as any),
     defaultValues: {
-      alias: "",
+      alias: currentAlias,
     },
   });
 
@@ -37,7 +41,7 @@ export default function CreateRoomDialog() {
 
   const onSubmit = async (data: FormValues) => {
     setLoading(true);
-    const response = await createAttendanceRoom(data).finally(() => {
+    const response = await updateAttendanceRoomName(roomId, data).finally(() => {
       setLoading(false);
     });
     if (response.error) {
@@ -48,9 +52,9 @@ export default function CreateRoomDialog() {
     } else {
       toast.toast({
         title: "Success",
-        description: "Room created successfully",
+        description: "Room updated successfully",
       });
-      form.reset();
+      form.reset({ alias: data.alias });
       router.refresh();
       setOpen(false);
     }
@@ -58,9 +62,13 @@ export default function CreateRoomDialog() {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} className="flex items-center gap-2">
-        <Plus className="h-4 w-4" /> Create new attendance room
-      </Button>
+      <button
+        onClick={() => setOpen(true)}
+        className="text-gray-400 hover:text-blue-600 transition-colors duration-200"
+        aria-label="Edit room"
+      >
+        <Pencil className="h-5 w-5" />
+      </button>
       <NativeModal
         openModal={open}
         closeModal={() => setOpen(false)}
@@ -69,10 +77,10 @@ export default function CreateRoomDialog() {
         <div className="space-y-6 p-6">
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight">
-              Create new room for attendance
+              Update room name
             </h1>
             <p className="text-sm text-gray-500">
-              Please enter the attendance alias for the event
+              Please enter the new name for the room
             </p>
           </div>
 
@@ -83,9 +91,9 @@ export default function CreateRoomDialog() {
                 name="alias"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Alias</FormLabel>
+                    <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter alias" {...field} />
+                      <Input placeholder="Enter new name" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -101,7 +109,7 @@ export default function CreateRoomDialog() {
                   Cancel
                 </Button>
                 <Button type="submit" loading={loading}>
-                  Create
+                  Update
                 </Button>
               </div>
             </form>
@@ -110,4 +118,4 @@ export default function CreateRoomDialog() {
       </NativeModal>
     </>
   );
-}
+} 

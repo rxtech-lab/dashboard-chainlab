@@ -11,24 +11,24 @@ export type Database = {
     Tables: {
       attendance_record: {
         Row: {
+          attendance_room_id: number
           attendant_id: number | null
           created_at: string
           id: number
-          room_id: number
           wallet_address: string
         }
         Insert: {
+          attendance_room_id: number
           attendant_id?: number | null
           created_at?: string
           id?: number
-          room_id: number
           wallet_address: string
         }
         Update: {
+          attendance_room_id?: number
           attendant_id?: number | null
           created_at?: string
           id?: number
-          room_id?: number
           wallet_address?: string
         }
         Relationships: [
@@ -40,13 +40,34 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "attendance_record_room_id_fkey"
-            columns: ["room_id"]
+            foreignKeyName: "attendance_record_attendance_room_id_fkey"
+            columns: ["attendance_room_id"]
             isOneToOne: false
-            referencedRelation: "room"
+            referencedRelation: "attendance_room"
             referencedColumns: ["id"]
           },
         ]
+      }
+      attendance_room: {
+        Row: {
+          alias: string
+          created_at: string
+          id: number
+          is_open: boolean
+        }
+        Insert: {
+          alias: string
+          created_at?: string
+          id?: number
+          is_open?: boolean
+        }
+        Update: {
+          alias?: string
+          created_at?: string
+          id?: number
+          is_open?: boolean
+        }
+        Relationships: []
       }
       attendant: {
         Row: {
@@ -69,27 +90,6 @@ export type Database = {
           id?: number
           last_name?: string | null
           uid?: string
-        }
-        Relationships: []
-      }
-      room: {
-        Row: {
-          alias: string
-          created_at: string
-          id: number
-          is_open: boolean
-        }
-        Insert: {
-          alias: string
-          created_at?: string
-          id?: number
-          is_open?: boolean
-        }
-        Update: {
-          alias?: string
-          created_at?: string
-          id?: number
-          is_open?: boolean
         }
         Relationships: []
       }

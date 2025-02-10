@@ -7,6 +7,7 @@ export const Config = {
   App: {
     name: "ChainLab App",
     version: process.env.VERCEL_GIT_COMMIT_REF,
+    pageLimit: 10,
   },
 };
 

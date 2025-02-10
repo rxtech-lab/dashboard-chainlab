@@ -9,13 +9,14 @@ import { SignJWT, jwtVerify } from "jose";
 import { createSecretKey } from "crypto";
 import redis from "./redis";
 
-export function isAuthenticated(cookie: ReadonlyRequestCookies) {
-  const token = cookie.get(COOKIE_NAME);
-  if (!token) {
-    return false;
+export async function isAuthenticated(cookie: ReadonlyRequestCookies) {
+  const session = await getSession(cookie);
+  if (session.isAuth === false) {
+    return {
+      error: "Unauthorized",
+    };
   }
-
-  return true;
+  return null;
 }
 
 export async function getSession(

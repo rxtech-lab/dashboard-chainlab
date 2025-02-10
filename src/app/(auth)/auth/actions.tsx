@@ -1,7 +1,7 @@
 "use server";
 
 import { concatMessage, saveSession } from "@/lib/auth";
-import { SIGN_IN_MESSAGE } from "@/lib/auth.constants";
+import { COOKIE_NAME, SIGN_IN_MESSAGE } from "@/lib/auth.constants";
 import { cookies } from "next/headers";
 import { SessionResponse } from "web3-connect-react";
 import { v4 as uuidv4 } from "uuid";
@@ -22,4 +22,9 @@ export async function getSignInMessage(walletAddress: string) {
 export async function signIn(session: SessionResponse) {
   const cookieStore = await cookies();
   return saveSession(cookieStore, session as any);
+}
+
+export async function signOut() {
+  const cookie = await cookies();
+  cookie.delete(COOKIE_NAME);
 }

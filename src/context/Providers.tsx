@@ -1,6 +1,6 @@
 "use client";
 
-import { signOut } from "@/app/actions";
+import { signOut } from "@/app/(auth)/auth/actions";
 import { ChainConfig } from "@/config/config";
 import { useRouter } from "next/navigation";
 import { isMobile } from "react-device-detect";
