@@ -26,12 +26,9 @@ export const metadata: Metadata = {
   description: "Home",
 };
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: { page?: string };
-}) {
-  const currentPage = searchParams.page ? parseInt(searchParams.page) : 1;
+export default async function Home({ searchParams }: { searchParams: any }) {
+  const params = await searchParams;
+  const currentPage = params.page ? parseInt(searchParams.page) : 1;
   const data = await getAttendanceRooms(currentPage, Config.App.pageLimit);
 
   return (

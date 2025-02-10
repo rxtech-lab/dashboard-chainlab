@@ -46,7 +46,7 @@ const PaginationLink = ({
   size = "icon",
   ...props
 }: PaginationLinkProps) => (
-  // @ts-ignore
+  // @ts-expect-error
   <Link
     aria-current={isActive ? "page" : undefined}
     className={cn(
