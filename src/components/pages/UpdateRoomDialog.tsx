@@ -46,6 +46,7 @@ export default function UpdateRoomDialog({
     setLoading(true);
     const response = await updateAttendanceRoomName(roomId, data).finally(
       () => {
+        router.refresh();
         setLoading(false);
       }
     );
@@ -61,7 +62,6 @@ export default function UpdateRoomDialog({
         description: "Room updated successfully",
       });
       form.reset({ alias: data.alias });
-      router.refresh();
       setOpen(false);
     }
   };
