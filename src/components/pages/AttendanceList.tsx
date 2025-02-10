@@ -62,6 +62,7 @@ function AttendanceRoomCard({ room }: AttendanceRoomCardProps) {
       toast.toast({
         title: "Error",
         description: error,
+        variant: "destructive",
       });
     } else {
       toast.toast({
@@ -84,6 +85,7 @@ function AttendanceRoomCard({ room }: AttendanceRoomCardProps) {
       toast.toast({
         title: "Error",
         description: error,
+        variant: "destructive",
       });
     } else {
       toast.toast({

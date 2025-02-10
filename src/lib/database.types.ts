@@ -52,22 +52,33 @@ export type Database = {
         Row: {
           alias: string
           created_at: string
+          created_by: number
           id: number
           is_open: boolean
         }
         Insert: {
           alias: string
           created_at?: string
+          created_by: number
           id?: number
           is_open?: boolean
         }
         Update: {
           alias?: string
           created_at?: string
+          created_by?: number
           id?: number
           is_open?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "attendance_room_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       attendant: {
         Row: {

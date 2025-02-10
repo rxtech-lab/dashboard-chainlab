@@ -44,6 +44,7 @@ export default function CreateRoomDialog() {
       toast.toast({
         title: "Error",
         description: response.error,
+        variant: "destructive",
       });
     } else {
       toast.toast({
