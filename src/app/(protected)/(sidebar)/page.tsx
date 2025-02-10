@@ -1,4 +1,5 @@
 import Header from "@/components/header/Header";
+import { Metadata } from "next";
 import dynamic from "next/dynamic";
 
 const CreateRoomDialog = dynamic(
@@ -7,6 +8,11 @@ const CreateRoomDialog = dynamic(
     ssr: !!false,
   }
 );
+
+export const metadata: Metadata = {
+  title: "Home",
+  description: "Home",
+};
 
 export default function Home() {
   return (

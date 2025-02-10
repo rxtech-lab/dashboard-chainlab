@@ -22,7 +22,11 @@ export function Avatar({ address }: AvatarProps) {
 
   return (
     <div className="w-10 h-10 rounded-full overflow-hidden border p-1">
-      <img src={avatar} alt={"Avatar"} className="w-full h-full object-cover" />
+      <img
+        src={avatar}
+        alt={"Avatar"}
+        className="w-full h-full object-cover rounded-full"
+      />
     </div>
   );
 }

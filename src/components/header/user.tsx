@@ -31,7 +31,7 @@ export function User({ address }: UserProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors cursor-pointer focus:outline-none">
+        <button className="flex items-center gap-2 hover:bg-gray-100 transition-colors cursor-pointer focus:outline-none rounded-full mr-4">
           <Avatar address={address} />
         </button>
       </DropdownMenuTrigger>

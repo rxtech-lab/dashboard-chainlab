@@ -18,8 +18,8 @@ interface Props {
 }
 
 export function DesktopAuthModal({ sdk }: Props) {
-  const initialWidth = "45vw";
-  const animateWidth = "90vw";
+  const initialWidth = "min(500px, 45vw)";
+  const animateWidth = "min(1000px, 90vw)";
   return (
     <motion.div
       initial={{ width: initialWidth }}

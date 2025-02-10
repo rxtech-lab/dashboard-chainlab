@@ -23,7 +23,7 @@ const Header = async ({ breadcrumbs }: Props) => {
 
   return (
     <header className="w-full border-b border-gray-100 sticky top-0 bg-white backdrop-blur-md">
-      <div className="px-4 py-4 flex items-center justify-between w-full">
+      <div className="px-4 py-2 flex items-center justify-between w-full">
         <div className="flex items-center gap-2">
           <SidebarTrigger />
           <div className="h-6 w-[1px] bg-gray-200" />
