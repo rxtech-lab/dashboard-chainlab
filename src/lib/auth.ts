@@ -8,6 +8,7 @@ import { SessionResponse } from "web3-connect-react";
 import { SignJWT, jwtVerify } from "jose";
 import { createSecretKey } from "crypto";
 import redis from "./redis";
+import { Database } from "./database.types";
 
 export async function isAuthenticated(cookie: ReadonlyRequestCookies) {
   const session = await getSession(cookie);
@@ -16,12 +17,18 @@ export async function isAuthenticated(cookie: ReadonlyRequestCookies) {
       error: "Unauthorized",
     };
   }
-  return null;
+  return {
+    error: null,
+    session,
+  };
 }
 
 export async function getSession(
   cookie: ReadonlyRequestCookies
-): Promise<SessionResponse | { isAuth: false }> {
+): Promise<
+  | (SessionResponse & Database["public"]["Tables"]["user"]["Row"])
+  | { isAuth: false }
+> {
   const token = cookie.get(COOKIE_NAME);
   if (!token) {
     return {
@@ -33,7 +40,7 @@ export async function getSession(
     createSecretKey(process.env.JWT_SECRET!, "utf-8")
   );
 
-  return value.payload as unknown as SessionResponse;
+  return value.payload as any;
 }
 
 export function concatMessage(message: string, nonce: string) {
@@ -67,7 +74,7 @@ export async function saveSession(
   }
 
   // verify the permission
-  const [isAdmin, error] = await adminOnly(walletAddress);
+  const [isAdmin, user, error] = await adminOnly(walletAddress);
   if (error) {
     return {
       error,
@@ -82,7 +89,10 @@ export async function saveSession(
 
   // sign the session
   const secretKey = createSecretKey(process.env.JWT_SECRET!, "utf-8");
-  const token = await new SignJWT(session as any)
+  const token = await new SignJWT({
+    ...session,
+    ...user,
+  } as any)
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("144h")
     .sign(secretKey);
@@ -119,7 +129,9 @@ export function verifyMessageSignature(
  */
 async function adminOnly(
   walletAddress: string
-): Promise<[boolean, string | null]> {
+): Promise<
+  [boolean, Database["public"]["Tables"]["user"]["Row"] | null, string | null]
+> {
   const { data, error } = await supabase()
     .from("user")
     .select("*")
@@ -127,19 +139,19 @@ async function adminOnly(
 
   if (error) {
     console.error(error);
-    return [false, error.message];
+    return [false, null, error.message];
   }
 
   if (data.length === 0) {
-    return [false, "User not found"];
+    return [false, null, "User not found"];
   }
 
   const user = data[0];
   if (user.role !== "ADMIN") {
-    return [false, "User is not an admin"];
+    return [false, null, "User is not an admin"];
   }
 
-  return [true, null];
+  return [true, user, null];
 }
 
 export async function signIn(

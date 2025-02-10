@@ -25,7 +25,10 @@ interface UpdateRoomDialogProps {
   currentAlias: string;
 }
 
-export default function UpdateRoomDialog({ roomId, currentAlias }: UpdateRoomDialogProps) {
+export default function UpdateRoomDialog({
+  roomId,
+  currentAlias,
+}: UpdateRoomDialogProps) {
   const [open, setOpen] = useState(false);
 
   const form = useForm<FormValues>({
@@ -41,13 +44,17 @@ export default function UpdateRoomDialog({ roomId, currentAlias }: UpdateRoomDia
 
   const onSubmit = async (data: FormValues) => {
     setLoading(true);
-    const response = await updateAttendanceRoomName(roomId, data).finally(() => {
-      setLoading(false);
-    });
+    const response = await updateAttendanceRoomName(roomId, data).finally(
+      () => {
+        router.refresh();
+        setLoading(false);
+      }
+    );
     if (response.error) {
       toast.toast({
         title: "Error",
         description: response.error,
+        variant: "destructive",
       });
     } else {
       toast.toast({
@@ -55,7 +62,6 @@ export default function UpdateRoomDialog({ roomId, currentAlias }: UpdateRoomDia
         description: "Room updated successfully",
       });
       form.reset({ alias: data.alias });
-      router.refresh();
       setOpen(false);
     }
   };
@@ -118,4 +124,4 @@ export default function UpdateRoomDialog({ roomId, currentAlias }: UpdateRoomDia
       </NativeModal>
     </>
   );
-} 
+}

@@ -26,40 +26,48 @@ export function WalletOption({ provider, isEnabled }: WalletOptionProps) {
   const connect = async (provider: WalletProvider) => {
     setIsConnecting(true);
 
-    await signIn(provider.metadata.name, {
-      async getSignInData(address, provider) {
-        const message = await getSignInMessage(address);
-        const signature = await provider.signMessage(message.message, {
-          forAuthentication: true,
-        });
-        return {
-          message: message.message,
-          signature,
-          walletAddress: address,
-        };
-      },
-      async onSignedIn(address, provider, session) {
-        const { error } = await signInAction(session);
-        if (error) {
-          toast({
-            title: "Error",
-            description: error,
-            variant: "destructive",
+    try {
+      await signIn(provider.metadata.name, {
+        async getSignInData(address, provider) {
+          const message = await getSignInMessage(address);
+          const signature = await provider.signMessage(message.message, {
+            forAuthentication: true,
           });
-          throw new Error(error);
-        } else {
-          toast({
-            title: "Success",
-            description: "Signed in successfully",
-          });
-          if (redirect) {
-            router.push(redirect);
+          return {
+            message: message.message,
+            signature,
+            walletAddress: address,
+          };
+        },
+        async onSignedIn(address, provider, session) {
+          const { error } = await signInAction(session);
+          if (error) {
+            toast({
+              title: "Error",
+              description: error,
+              variant: "destructive",
+            });
+            throw new Error(error);
           } else {
-            router.push("/");
+            toast({
+              title: "Success",
+              description: "Signed in successfully",
+            });
+            if (redirect) {
+              router.push(redirect);
+            } else {
+              router.push("/");
+            }
           }
-        }
-      },
-    }).finally(() => setIsConnecting(false));
+        },
+      }).finally(() => setIsConnecting(false));
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -85,22 +93,13 @@ export function WalletOption({ provider, isEnabled }: WalletOptionProps) {
       <div className="ml-auto">
         <Button
           onClick={() => connect(provider)}
+          loading={isConnecting}
           disabled={!isEnabled || isConnecting || isSignedIn}
           variant={
-            isEnabled
-              ? isConnecting
-                ? "default"
-                : isSignedIn
-                ? "secondary"
-                : "default"
-              : "secondary"
+            isEnabled ? (isSignedIn ? "secondary" : "default") : "secondary"
           }
         >
-          {isConnecting
-            ? "Connecting..."
-            : !isSignedIn
-            ? "Connect"
-            : "Connected"}
+          {isEnabled ? (isSignedIn ? "Connected" : "Connect") : "Not installed"}
         </Button>
       </div>
     </div>

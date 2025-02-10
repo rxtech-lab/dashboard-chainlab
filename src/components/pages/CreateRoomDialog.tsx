@@ -38,12 +38,14 @@ export default function CreateRoomDialog() {
   const onSubmit = async (data: FormValues) => {
     setLoading(true);
     const response = await createAttendanceRoom(data).finally(() => {
+      router.refresh();
       setLoading(false);
     });
     if (response.error) {
       toast.toast({
         title: "Error",
         description: response.error,
+        variant: "destructive",
       });
     } else {
       toast.toast({
@@ -51,7 +53,6 @@ export default function CreateRoomDialog() {
         description: "Room created successfully",
       });
       form.reset();
-      router.refresh();
       setOpen(false);
     }
   };

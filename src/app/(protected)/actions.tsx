@@ -15,16 +15,19 @@ export async function createAttendanceRoom(data: FormValues): Promise<{
   error?: string;
 }> {
   const cookie = await cookies();
-  const error = await isAuthenticated(cookie);
+  const { error, session } = await isAuthenticated(cookie);
   if (error) {
     return {
       success: false,
-      error: error.error,
+      error: error,
     };
   }
   const { error: insertError } = await supabase()
     .from("attendance_room")
-    .insert(data);
+    .insert({
+      ...data,
+      created_by: session!.id,
+    });
 
   if (insertError) {
     return {
@@ -40,15 +43,16 @@ export async function createAttendanceRoom(data: FormValues): Promise<{
 
 export async function getAttendanceRooms(page: number, limit: number) {
   const cookie = await cookies();
-  const error = await isAuthenticated(cookie);
+  const { error, session } = await isAuthenticated(cookie);
   if (error) {
-    throw new Error(error.error);
+    throw new Error(error);
   }
 
   const [roomsResponse, countResponse] = await Promise.all([
     supabase()
       .from("attendance_room")
       .select("*")
+      .eq("created_by", session!.id)
       .order("created_at", { ascending: false })
       .range((page - 1) * limit, page * limit - 1),
     supabase()
@@ -83,17 +87,18 @@ export async function updateAttendanceRoom(
   data: { is_open: boolean }
 ) {
   const cookie = await cookies();
-  const error = await isAuthenticated(cookie);
+  const { error, session } = await isAuthenticated(cookie);
   if (error) {
     return {
       success: false,
-      error: error.error,
+      error: error,
     };
   }
   const { error: updateError } = await supabase()
     .from("attendance_room")
     .update(data)
-    .eq("id", id);
+    .eq("id", id)
+    .eq("created_by", session!.id);
 
   if (updateError) {
     return {
@@ -114,17 +119,18 @@ export async function updateAttendanceRoom(
  */
 export async function deleteAttendanceRoom(id: number) {
   const cookie = await cookies();
-  const error = await isAuthenticated(cookie);
+  const { error, session } = await isAuthenticated(cookie);
   if (error) {
     return {
       success: false,
-      error: error.error,
+      error: error,
     };
   }
   const { error: deleteError } = await supabase()
     .from("attendance_room")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("created_by", session!.id);
 
   if (deleteError) {
     return {
@@ -149,16 +155,17 @@ export async function updateAttendanceRoomName(
   data: { alias: string }
 ) {
   const cookie = await cookies();
-  const error = await isAuthenticated(cookie);
+  const { error, session } = await isAuthenticated(cookie);
   if (error) {
     return {
       success: false,
-      error: error.error,
+      error: error,
     };
   }
   const { error: updateError } = await supabase()
     .from("attendance_room")
     .update(data)
+    .eq("created_by", session!.id)
     .eq("id", id);
 
   if (updateError) {
