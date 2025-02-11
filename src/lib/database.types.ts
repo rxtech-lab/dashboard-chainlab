@@ -15,21 +15,18 @@ export type Database = {
           attendant_id: number
           created_at: string
           id: number
-          wallet_address: string
         }
         Insert: {
           attendance_room_id: number
           attendant_id: number
           created_at?: string
           id?: number
-          wallet_address: string
         }
         Update: {
           attendance_room_id?: number
           attendant_id?: number
           created_at?: string
           id?: number
-          wallet_address?: string
         }
         Relationships: [
           {

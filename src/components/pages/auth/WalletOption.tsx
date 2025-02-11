@@ -5,7 +5,7 @@ import { useWallet, WalletProvider } from "web3-connect-react";
 interface WalletOptionProps {
   provider: WalletProvider;
   isEnabled: boolean;
-  connect: (provider: WalletProvider) => void;
+  connect: (provider: WalletProvider) => Promise<void>;
 }
 
 export function WalletOption({
@@ -14,7 +14,7 @@ export function WalletOption({
   connect,
 }: WalletOptionProps) {
   const [isConnecting, setIsConnecting] = useState(false);
-  const { signIn, isSignedIn } = useWallet();
+  const { isSignedIn } = useWallet();
 
   return (
     <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-gray-50 transition-colors flex-wrap gap-4 bg-white">
@@ -38,7 +38,12 @@ export function WalletOption({
       </div>
       <div className="ml-auto">
         <Button
-          onClick={() => connect(provider)}
+          onClick={() => {
+            setIsConnecting(true);
+            connect(provider).finally(() => {
+              setIsConnecting(false);
+            });
+          }}
           loading={isConnecting}
           disabled={!isEnabled || isConnecting || isSignedIn}
           variant={

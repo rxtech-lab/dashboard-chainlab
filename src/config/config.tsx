@@ -11,7 +11,7 @@ export const Config = {
     pageLimit: 10,
   },
   Attendance: {
-    nonceExpiration: 30,
+    nonceExpiration: 300,
     dataAutoRefreshInterval: 1000 * 10,
     cookieExpiration: 60 * 60,
   },

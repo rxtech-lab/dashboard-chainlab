@@ -10,6 +10,7 @@ import { createSecretKey } from "crypto";
 import redis from "./redis";
 import { Database } from "./database.types";
 import { Config, getAdminSignInMessage } from "@/config/config";
+import dayjs from "dayjs";
 
 export async function isAuthenticated(cookie: ReadonlyRequestCookies) {
   const session = await getSession(cookie);
@@ -85,18 +86,21 @@ export async function saveSession(
   }
 
   // sign the session
+  const expireAt = dayjs()
+    .add(Config.Authentication.defaultCookieExpiration, "seconds")
+    .toDate();
   const secretKey = createSecretKey(process.env.JWT_SECRET!, "utf-8");
   const token = await new SignJWT({
     ...session,
     ...user,
   } as any)
     .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime("144h")
+    .setExpirationTime(expireAt)
     .sign(secretKey);
   cookie.set(ADMIN_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    maxAge: Config.Authentication.defaultCookieExpiration,
+    expires: expireAt,
   });
   return {
     error: undefined,

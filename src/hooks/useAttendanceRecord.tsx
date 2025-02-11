@@ -1,9 +1,9 @@
-import { getAttendanceRecordByRoomId } from "@/app/(protected)/(sidebar)/attendance/[id]/actions";
+import { getAttendanceRecordByRoomId } from "@/app/(internal)/(protected)/(sidebar)/attendance/[id]/actions";
 import { Config } from "@/config/config";
 import useSWR from "swr";
 
 export function useAttendanceRecord(id: number) {
-  const { data, error, isLoading } = useSWR(
+  const { data, error, isLoading, isValidating } = useSWR(
     `/api/attendance-record/${id}`,
     async () => {
       const { data, count, error } = await getAttendanceRecordByRoomId(id);
@@ -22,5 +22,6 @@ export function useAttendanceRecord(id: number) {
     data,
     error,
     isLoading,
+    isValidating,
   };
 }

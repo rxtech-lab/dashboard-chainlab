@@ -8,7 +8,7 @@ import Spinner from "../../ui/spinner";
 import {
   deleteAttendanceRoom,
   updateAttendanceRoom,
-} from "@/app/(protected)/actions";
+} from "@/app/(internal)/(protected)/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import UpdateRoomDialog from "../UpdateRoomDialog";

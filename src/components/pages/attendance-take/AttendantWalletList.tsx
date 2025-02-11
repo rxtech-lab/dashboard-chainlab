@@ -1,50 +1,82 @@
 "use client";
 
-import { signInAsAttendant } from "@/app/(public)/attendance/[id]/take/actions";
+import {
+  signInAsAttendant,
+  takeAttendance as takeAttendanceAction,
+} from "@/app/(public)/attendance/[id]/take/actions";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import Spinner from "@/components/ui/spinner";
 import { getAttendantSignInMessage } from "@/config/config";
 import { useToast } from "@/hooks/use-toast";
-import { useParams, useSearchParams } from "next/navigation";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { isMobile } from "react-device-detect";
 import { AvailableProvider, useAddresses, useWallet } from "web3-connect-react";
+import AttendanceSignoutButton from "./SignOutButton";
+import { ChevronDown } from "lucide-react";
 
 interface Props {
   user?: {
+    id: number;
     firstName: string;
     lastName: string;
     userId: string;
   };
   attendants: {
     id: number;
+    userId: string;
     firstName: string;
     lastName: string;
     disabled: boolean;
   }[];
 }
 
+// Create a styled select component
+function StyledSelect({
+  children,
+  ...props
+}: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <div className="relative">
+      <select
+        {...props}
+        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 hover:border-indigo-400 active:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg appearance-none bg-white transition-colors duration-200"
+      >
+        {children}
+      </select>
+      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none group-hover:text-indigo-400 group-active:text-indigo-500 transition-colors duration-200" />
+    </div>
+  );
+}
+
 export default function AttendantWalletList(props: Props) {
-  const { sdk, isSignedIn, signIn } = useWallet();
+  const {
+    sdk,
+    isSignedIn,
+    signIn,
+    isLoading: isLoadingWallet,
+    signOut,
+  } = useWallet();
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
   const searchParams = useSearchParams();
   const params = useParams();
   const router = useRouter();
-  const [user, setUser] = useState<Props["user"] | null>(null);
+  const [user, setUser] = useState<Props["user"] | null>(
+    props.user ?? props.attendants.length > 0 ? props.attendants[0] : null
+  );
 
   const nonce = searchParams.get("nonce");
-  const roomId = params.roomId as string;
+  const roomId = params.id as string;
   const addresses = useAddresses("ethereum");
-  useEffect(() => {
-    setUser(props.user);
-  }, [props.user]);
 
   const connect = async (wallet: AvailableProvider) => {
     setIsLoading(true);
     await signIn(wallet, {
-      onSignedIn: async (address, provider, session) => {},
+      onSignedIn: async (address, provider, session) => {
+        await signInAsAttendant(session);
+      },
       getSignInData: async (address, provider) => {},
     })
       .catch((error) => {
@@ -69,71 +101,152 @@ export default function AttendantWalletList(props: Props) {
       });
       return;
     }
-    if (!user || !nonce) {
+
+    if (!user) {
       toast.toast({
         title: "Error",
-        description: "User or nonce not found",
+        description: "User not found",
         variant: "destructive",
       });
       return;
     }
-    const address = addresses.addresses[0];
-    const signature = await sdk.provider.signMessage(
-      getAttendantSignInMessage(user, nonce),
-      {}
-    );
-    const { error } = await signInAsAttendant(
-      user,
-      parseInt(roomId),
-      signature,
-      address
-    );
-    if (error) {
+
+    if (!nonce) {
       toast.toast({
         title: "Error",
-        description: error,
+        description: "Nonce not found",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const address = addresses.addresses[0];
+      const signature = await sdk.provider.signMessage(
+        getAttendantSignInMessage(user, nonce),
+        {}
+      );
+      const { error } = await takeAttendanceAction(
+        user,
+        parseInt(roomId),
+        nonce,
+        signature,
+        address
+      );
+      if (error) {
+        toast.toast({
+          title: "Error",
+          description: error,
+          variant: "destructive",
+        });
+      } else {
+        toast.toast({
+          title: "Success",
+          description: "Attendance taken successfully",
+        });
+        router.refresh();
+      }
+    } catch (error: any) {
+      toast.toast({
+        title: "Error",
+        description: error.message,
         variant: "destructive",
       });
     }
   };
 
+  if (isLoadingWallet) {
+    return (
+      <div className="flex justify-center items-center">
+        <Spinner className="w-8 h-8" />
+      </div>
+    );
+  }
+
   if (isSignedIn) {
     return (
-      <div>
-        <select>
-          {props.attendants?.map((attendant) => (
-            <option key={attendant.id} value={attendant.id}>
-              {attendant.firstName} {attendant.lastName}
-            </option>
-          ))}
-        </select>
-        <button onClick={takeAttendance}>Take Attendance</button>
+      <div className="flex flex-col flex-grow">
+        <div className="flex-grow">
+          {!Boolean(props.user) && (
+            <div className="space-y-2">
+              <Label className="block text-sm font-medium text-gray-700">
+                Select your name
+              </Label>
+              <StyledSelect
+                onChange={(e) => {
+                  const attendant = props.attendants.find(
+                    (attendant) => attendant.userId === e.target.value
+                  );
+                  if (attendant) {
+                    setUser(attendant);
+                  }
+                }}
+              >
+                {props.attendants?.map((attendant) => (
+                  <option
+                    key={attendant.userId}
+                    value={attendant.userId}
+                    disabled={attendant.disabled}
+                    className={attendant.disabled ? "text-gray-400" : ""}
+                  >
+                    {attendant.firstName} {attendant.lastName}
+                  </option>
+                ))}
+              </StyledSelect>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-4 lg:mt-4 fixed bottom-0 left-0 right-0 bg-white p-4 lg:p-0 lg:static">
+          <Button
+            onClick={takeAttendance}
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Take Attendance
+          </Button>
+
+          <AttendanceSignoutButton />
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <Label>Sign in with your wallet</Label>
-      <select
-        defaultValue="select"
-        onChange={(e) => {
-          connect(e.target.value as AvailableProvider);
-        }}
-      >
-        <option value="select" disabled></option>
-        {sdk?.walletProviders
-          .filter((wallet) => wallet.isVisible(isMobile))
-          .map((wallet) => (
-            <option
-              key={wallet.metadata.name}
-              value={wallet.metadata.name}
-              disabled={!wallet.isEnabled(sdk.walletProviders)}
-            >
-              {wallet.metadata.name}
-            </option>
-          ))}
-      </select>
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label className="block text-sm font-medium text-gray-700">
+          Sign in with your wallet
+        </Label>
+        <StyledSelect
+          defaultValue="select"
+          onChange={(e) => {
+            connect(e.target.value as AvailableProvider);
+          }}
+        >
+          <option value="select" disabled>
+            Select a wallet
+          </option>
+          {sdk?.walletProviders
+            .filter((wallet) => wallet.isVisible(isMobile))
+            .map((wallet) => (
+              <option
+                key={wallet.metadata.name}
+                value={wallet.metadata.name}
+                disabled={!wallet.isEnabled(sdk.walletProviders)}
+                className={
+                  !wallet.isEnabled(sdk.walletProviders) ? "text-gray-400" : ""
+                }
+              >
+                {wallet.metadata.name}
+              </option>
+            ))}
+        </StyledSelect>
+      </div>
+      {isLoading && (
+        <div className="flex justify-center">
+          <Spinner className="w-6 h-6" />
+        </div>
+      )}
     </div>
   );
 }

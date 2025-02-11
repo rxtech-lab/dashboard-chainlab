@@ -1,6 +1,6 @@
 "use client";
 
-import { updateAttendanceRoom } from "@/app/(protected)/actions";
+import { updateAttendanceRoom } from "@/app/(internal)/(protected)/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useAttendanceUrl } from "@/hooks/useAttendanceUrl";
 import type { Database } from "@/lib/database.types";
@@ -71,7 +71,8 @@ export default function AttendanceDetailView({
         {/* QR Code Panel */}
         <div className="lg:col-span-1 h-[500px] sticky top-20">
           <QRCodePanel
-            isLoading={isLoading}
+            roomId={room.id}
+            isLoading={isLoadingTakeAttendanceUrl}
             isOpen={isOpen}
             qrCode={takeAttendanceUrl?.qrCode}
             exp={takeAttendanceUrl?.exp}

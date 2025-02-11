@@ -15,7 +15,7 @@ interface Props {
   sdk: {
     walletProviders: WalletProvider[];
   };
-  connect: (provider: WalletProvider) => void;
+  connect: (provider: WalletProvider) => Promise<void>;
 }
 
 export function MobileAuthModal({ sdk, connect }: Props) {

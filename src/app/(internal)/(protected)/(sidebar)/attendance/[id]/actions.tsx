@@ -1,7 +1,7 @@
 "use server";
 
 import { Config } from "@/config/config";
-import { getAttendanceNonceKey } from "@/lib/attendance";
+import { getAttendanceNonceKey } from "@/lib/attendance.constants";
 import { isAuthenticated } from "@/lib/auth";
 import redis from "@/lib/redis";
 import supabase from "@/lib/supabase";
@@ -74,6 +74,30 @@ export async function getAttendanceRecordByRoomId(id: number) {
   return { count, data };
 }
 
+export async function refreshNonce(id: number) {
+  const cookieStore = await cookies();
+  const { error } = await isAuthenticated(cookieStore);
+
+  if (error) {
+    return { error: error };
+  }
+
+  const key = getAttendanceNonceKey(id);
+  const nonce = uuidv4();
+  const expirationTime = new Date(
+    Date.now() + Config.Attendance.nonceExpiration * 1000
+  );
+
+  await redis.set(key, nonce, {
+    ex: Config.Attendance.nonceExpiration,
+  });
+
+  return {
+    url: `/attendance/${id}/take?nonce=${nonce}`,
+    exp: expirationTime.toISOString(),
+  };
+}
+
 /**
  * Generate a nonce and return a url and expiration time for the attendance room
  * @param id - The id of the attendance room
@@ -85,6 +109,19 @@ export async function generateAttendanceUrl(id: number) {
 
   if (error) {
     return { error: error };
+  }
+
+  // check if the nonce is already set
+  const key = getAttendanceNonceKey(id);
+  let nonce = await redis.get(key);
+  if (nonce) {
+    //return the url with the nonce
+    const remainingTime = await redis.ttl(key);
+    const expirationTime = new Date(Date.now() + remainingTime * 1000);
+    return {
+      url: `/attendance/${id}/take?nonce=${nonce}`,
+      exp: expirationTime.toISOString(),
+    };
   }
 
   const { data, error: err } = await supabase()
@@ -103,11 +140,9 @@ export async function generateAttendanceUrl(id: number) {
   }
 
   // generate nonce
-  const nonce = uuidv4();
+  nonce = uuidv4();
 
   // save nonce to redis
-
-  const key = getAttendanceNonceKey(id);
   await redis.set(key, nonce, { ex: Config.Attendance.nonceExpiration });
 
   const currentTime = new Date();

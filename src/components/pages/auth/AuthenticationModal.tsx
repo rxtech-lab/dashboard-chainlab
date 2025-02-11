@@ -3,10 +3,10 @@
 import {
   getSignInMessage,
   signIn as signInAction,
-} from "@/app/(auth)/auth/actions";
+} from "@/app/(internal)/(auth)/auth/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useSearchParams } from "next/navigation";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import { useWallet, WalletProvider } from "web3-connect-react";
 import { DesktopAuthModal } from "./DesktopAuthModal";
 import { MobileAuthModal } from "./MobileAuthModal";
@@ -17,7 +17,7 @@ export default function AuthenticationModal() {
   const { sdk } = useWallet();
   const redirect = searchParams.get("redirect");
   const router = useRouter();
-  const { signIn, isSignedIn } = useWallet();
+  const { signIn } = useWallet();
 
   const connect = async (provider: WalletProvider) => {
     try {
