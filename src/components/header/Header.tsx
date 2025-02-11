@@ -4,6 +4,7 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
+  BreadcrumbSeparator,
 } from "../ui/breadcrumb";
 import { SidebarTrigger } from "../ui/sidebar";
 import { User } from "./user";
@@ -29,12 +30,15 @@ const Header = async ({ breadcrumbs }: Props) => {
           <div className="h-6 w-[1px] bg-gray-200" />
           <Breadcrumb>
             <BreadcrumbList>
-              {breadcrumbs.map((breadcrumb) => (
-                <BreadcrumbItem key={breadcrumb.url}>
-                  <BreadcrumbLink href={breadcrumb.url}>
-                    {breadcrumb.title}
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
+              {breadcrumbs.map((breadcrumb, index) => (
+                <div key={breadcrumb.url} className="flex items-center gap-2">
+                  <BreadcrumbItem>
+                    <BreadcrumbLink href={breadcrumb.url}>
+                      {breadcrumb.title}
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  {index !== breadcrumbs.length - 1 && <BreadcrumbSeparator />}
+                </div>
               ))}
             </BreadcrumbList>
           </Breadcrumb>

@@ -1,4 +1,4 @@
-import Layout from "@/components/Layout";
+import { Toaster } from "@/components/ui/toaster";
 import { Providers } from "@/context/Providers";
 import { getSession } from "@/lib/auth";
 import type { Metadata } from "next";
@@ -6,7 +6,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { cookies } from "next/headers";
 import { SessionResponse } from "web3-connect-react";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -34,10 +33,8 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers session={session as SessionResponse}>
-          <Layout>{children}</Layout>
-          <Toaster />
-        </Providers>
+        <Providers session={session as SessionResponse}>{children}</Providers>
+        <Toaster />
       </body>
     </html>
   );

@@ -1,28 +1,32 @@
-import ErrorComponent from "@/components/error/ErrorComponent";
+import AttendanceDetailView from "@/components/pages/AttendanceDetailView";
+import { notFound } from "next/navigation";
 import { getAttendance } from "./actions";
+import { Metadata } from "next";
+import Header from "@/components/header/Header";
 
-export async function generateMetadata({ params }: { params: any }) {
-  const attendance = await getAttendance(Number((await params).id));
+export const metadata: Metadata = {
+  title: "Attendance Detail",
+  description: "Attendance Detail",
+};
 
-  if (attendance.error) {
-    return {
-      title: attendance.error.toString(),
-    };
+export default async function AttendanceDetailPage({ params }: any) {
+  const { data: room, error: err } = await getAttendance(
+    Number((await params).id)
+  );
+
+  if (err) {
+    notFound();
   }
 
-  return {
-    title: attendance.data!.alias,
-  };
-}
-
-export default async function page({ params }: any) {
-  const attendance = await getAttendance(Number((await params).id));
-  if (attendance.error) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <ErrorComponent message={attendance.error.toString()} />
-      </div>
-    );
-  }
-  return <div>Attendance</div>;
+  return (
+    <div className="w-full">
+      <Header
+        breadcrumbs={[
+          { title: "Home", url: "/" },
+          { title: "Attendance", url: `/attendance/${room!.id}` },
+        ]}
+      />
+      <AttendanceDetailView room={room!} />
+    </div>
+  );
 }
