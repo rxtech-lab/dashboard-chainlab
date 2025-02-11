@@ -5,15 +5,19 @@ import { Card } from "../ui/card";
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
-import { CircleAlertIcon, FileWarningIcon } from "lucide-react";
+import { CircleAlertIcon, FileWarningIcon, RefreshCwIcon } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { refreshNonce } from "@/app/(internal)/(protected)/(sidebar)/attendance/[id]/actions";
+import { useSWRConfig } from "swr";
 
 // Add duration plugin to dayjs
 dayjs.extend(duration);
 
 // Create a separate countdown component for better organization
-function CountdownTimer({ exp }: { exp: string }) {
+function CountdownTimer({ exp, roomId }: { exp: string; roomId: number }) {
   const [timeLeft, setTimeLeft] = useState<string>("");
+  const [isRotating, setIsRotating] = useState(false);
+  const { mutate } = useSWRConfig();
 
   useEffect(() => {
     const calculateTimeLeft = () => {
@@ -38,8 +42,36 @@ function CountdownTimer({ exp }: { exp: string }) {
     return () => clearInterval(timer);
   }, [exp]);
 
+  const handleRefresh = async () => {
+    setIsRotating(true);
+    await refreshNonce(roomId);
+    mutate(`/attendance/${roomId}/url`);
+    setTimeout(() => setIsRotating(false), 800);
+  };
+
   return (
-    <div className="text-sm font-medium">
+    <div className="text-sm font-medium flex items-center gap-2">
+      <motion.button
+        onClick={handleRefresh}
+        initial={{ rotate: 0 }}
+        animate={{ rotate: isRotating ? 720 : 0 }}
+        whileHover={{ rotate: isRotating ? 720 : 360 }}
+        transition={{
+          duration: 0.8,
+          ease: [0.3, 0, 0.2, 1],
+          type: "tween",
+          rotate: {
+            duration: 0.8,
+            ease: [0.3, 0, 0.2, 1],
+          },
+          exit: {
+            delay: 0.5,
+            duration: 0.8,
+          },
+        }}
+      >
+        <RefreshCwIcon className="w-4 h-4 text-sky-500 active:text-yellow-800 hover:text-sky-800" />
+      </motion.button>
       <span className="text-gray-500">Expires in: </span>
       <span
         className={`${
@@ -57,6 +89,7 @@ interface QRCodePanelProps {
   isOpen: boolean;
   qrCode?: string;
   exp?: string;
+  roomId: number;
 }
 
 export default function QRCodePanel({
@@ -64,6 +97,7 @@ export default function QRCodePanel({
   isOpen,
   qrCode,
   exp,
+  roomId,
 }: QRCodePanelProps) {
   const fadeInScale = {
     initial: { opacity: 0, scale: 0.95 },
@@ -115,7 +149,7 @@ export default function QRCodePanel({
               </a>
             </TooltipContent>
           </Tooltip>
-          {exp && <CountdownTimer exp={exp} />}
+          {exp && <CountdownTimer exp={exp} roomId={roomId} />}
           <p className="text-sm text-gray-500 text-center">
             Scan this QR code to take attendance
           </p>

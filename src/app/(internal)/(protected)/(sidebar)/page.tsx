@@ -1,5 +1,5 @@
 import Header from "@/components/header/Header";
-import { AttendanceRoomList } from "@/components/pages/AttendanceList";
+import { AttendanceRoomList } from "@/components/pages/attendance/AttendanceList";
 import { Config } from "@/config/config";
 import { Metadata } from "next";
 import dynamic from "next/dynamic";

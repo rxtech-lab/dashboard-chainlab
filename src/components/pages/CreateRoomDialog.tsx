@@ -16,7 +16,7 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Input } from "../ui/input";
-import { createAttendanceRoom } from "@/app/(protected)/actions";
+import { createAttendanceRoom } from "@/app/(internal)/(protected)/actions";
 import { useToast } from "@/hooks/use-toast";
 import { formSchema, FormValues } from "./createRoom.type";
 import { useRouter } from "next/navigation";

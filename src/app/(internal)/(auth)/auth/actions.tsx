@@ -1,12 +1,12 @@
 "use server";
 
-import { concatMessage, saveSession } from "@/lib/auth";
-import { COOKIE_NAME, SIGN_IN_MESSAGE } from "@/lib/auth.constants";
+import { saveSession } from "@/lib/auth";
+import { ADMIN_COOKIE_NAME } from "@/lib/auth.constants";
 import { cookies } from "next/headers";
 import { SessionResponse } from "web3-connect-react";
 import { v4 as uuidv4 } from "uuid";
 import redis from "@/lib/redis";
-import { Config } from "@/config/config";
+import { Config, getAdminSignInMessage } from "@/config/config";
 
 export async function getSignInMessage(walletAddress: string) {
   const nonce = uuidv4();
@@ -14,7 +14,7 @@ export async function getSignInMessage(walletAddress: string) {
   await redis.set(key, nonce);
   await redis.expire(key, Config.Authentication.defaultNonceExpiration);
   return {
-    message: concatMessage(SIGN_IN_MESSAGE, nonce),
+    message: getAdminSignInMessage(nonce),
     nonce,
   };
 }
@@ -26,5 +26,5 @@ export async function signIn(session: SessionResponse) {
 
 export async function signOut() {
   const cookie = await cookies();
-  cookie.delete(COOKIE_NAME);
+  cookie.delete(ADMIN_COOKIE_NAME);
 }

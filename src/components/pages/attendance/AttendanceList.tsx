@@ -4,14 +4,14 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
 import type { Database } from "@/lib/database.types";
-import Spinner from "../ui/spinner";
+import Spinner from "../../ui/spinner";
 import {
   deleteAttendanceRoom,
   updateAttendanceRoom,
-} from "@/app/(protected)/actions";
+} from "@/app/(internal)/(protected)/actions";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import UpdateRoomDialog from "./UpdateRoomDialog";
+import UpdateRoomDialog from "../UpdateRoomDialog";
 import Link from "next/link";
 
 type AttendanceRoom = Database["public"]["Tables"]["attendance_room"]["Row"];

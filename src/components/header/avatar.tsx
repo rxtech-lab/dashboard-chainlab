@@ -26,7 +26,7 @@ export function Avatar({ address }: AvatarProps) {
         <motion.div key="skeleton" {...fadeAnimation}>
           <Skeleton className="w-10 h-10 rounded-full P-1" />
         </motion.div>
-      ) : avatar ? (
+      ) : !Boolean(avatar) ? (
         <motion.div key="boring-avatar" {...fadeAnimation}>
           <BoringAvatar name={address} size={40} />
         </motion.div>

@@ -1,6 +1,7 @@
 "use client";
 
-import { signOut } from "@/app/(auth)/auth/actions";
+import { signOut as signOutInternally } from "@/app/(internal)/(auth)/auth/actions";
+import { signOut as signOutPublicly } from "@/app/(public)/attendance/actions";
 import { ChainConfig } from "@/config/config";
 import { useRouter } from "next/navigation";
 import { isMobile } from "react-device-detect";
@@ -15,9 +16,10 @@ import {
 interface ProvidersProps {
   children: React.ReactNode;
   session: SessionResponse;
+  mode: "internal" | "public";
 }
 
-export function Providers({ children, session }: ProvidersProps) {
+export function Providers({ children, session, mode }: ProvidersProps) {
   const router = useRouter();
 
   return (
@@ -42,7 +44,11 @@ export function Providers({ children, session }: ProvidersProps) {
           }),
         ]}
         onSignedOut={async () => {
-          await signOut();
+          if (mode === "internal") {
+            await signOutInternally();
+          } else {
+            await signOutPublicly();
+          }
           router.refresh();
         }}
       >

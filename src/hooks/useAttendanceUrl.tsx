@@ -1,6 +1,7 @@
-import { generateAttendanceUrl } from "@/app/(protected)/(sidebar)/attendance/[id]/actions";
+import { generateAttendanceUrl } from "@/app/(internal)/(protected)/(sidebar)/attendance/[id]/actions";
 import { Config } from "@/config/config";
 import useSWR from "swr";
+import { useEffect } from "react";
 
 interface AttendanceUrl {
   qrCode?: string;
@@ -12,7 +13,7 @@ interface AttendanceUrl {
 }
 
 export function useAttendanceUrl(roomId: number) {
-  const { data, error, isLoading } = useSWR<AttendanceUrl>(
+  const { data, error, isLoading, mutate } = useSWR<AttendanceUrl>(
     `/attendance/${roomId}/url`,
     async () => {
       const host = window.location.host;
@@ -43,6 +44,23 @@ export function useAttendanceUrl(roomId: number) {
       refreshInterval: Config.Attendance.nonceExpiration * 1000,
     }
   );
+
+  // Force refresh when URL expires
+  useEffect(() => {
+    if (data?.exp) {
+      const expTime = new Date(data.exp).getTime();
+      const now = Date.now();
+      const timeUntilExpiration = expTime - now;
+
+      if (timeUntilExpiration > 0) {
+        const timer = setTimeout(() => {
+          mutate();
+        }, timeUntilExpiration);
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [data?.exp, mutate]);
 
   return {
     data,

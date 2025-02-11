@@ -15,9 +15,10 @@ interface Props {
   sdk: {
     walletProviders: WalletProvider[];
   };
+  connect: (provider: WalletProvider) => Promise<void>;
 }
 
-export function MobileAuthModal({ sdk }: Props) {
+export function MobileAuthModal({ sdk, connect }: Props) {
   return (
     <motion.div
       initial={{ width: "100%", opacity: 0 }}
@@ -57,6 +58,7 @@ export function MobileAuthModal({ sdk }: Props) {
                   key={provider.metadata.name}
                   provider={provider}
                   isEnabled={provider.isEnabled(sdk.walletProviders)}
+                  connect={connect}
                 />
               ))}
             </div>
