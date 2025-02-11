@@ -1,74 +1,20 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
-import { useWallet, WalletProvider } from "web3-connect-react";
 import React, { useState } from "react";
-import {
-  getSignInMessage,
-  signIn as signInAction,
-} from "@/app/(auth)/auth/actions";
-import { useToast } from "@/hooks/use-toast";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useWallet, WalletProvider } from "web3-connect-react";
 
 interface WalletOptionProps {
   provider: WalletProvider;
   isEnabled: boolean;
+  connect: (provider: WalletProvider) => void;
 }
 
-export function WalletOption({ provider, isEnabled }: WalletOptionProps) {
-  const { signIn, isSignedIn } = useWallet();
+export function WalletOption({
+  provider,
+  isEnabled,
+  connect,
+}: WalletOptionProps) {
   const [isConnecting, setIsConnecting] = useState(false);
-  const { toast } = useToast();
-  const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect");
-  const router = useRouter();
-
-  const connect = async (provider: WalletProvider) => {
-    setIsConnecting(true);
-
-    try {
-      await signIn(provider.metadata.name, {
-        async getSignInData(address, provider) {
-          const message = await getSignInMessage(address);
-          const signature = await provider.signMessage(message.message, {
-            forAuthentication: true,
-          });
-          return {
-            message: message.message,
-            signature,
-            walletAddress: address,
-          };
-        },
-        async onSignedIn(address, provider, session) {
-          const { error } = await signInAction(session);
-          if (error) {
-            toast({
-              title: "Error",
-              description: error,
-              variant: "destructive",
-            });
-            throw new Error(error);
-          } else {
-            toast({
-              title: "Success",
-              description: "Signed in successfully",
-            });
-            if (redirect) {
-              router.push(redirect);
-            } else {
-              router.push("/");
-            }
-          }
-        },
-      }).finally(() => setIsConnecting(false));
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
+  const { signIn, isSignedIn } = useWallet();
 
   return (
     <div className="flex items-center justify-between p-4 rounded-lg border hover:bg-gray-50 transition-colors flex-wrap gap-4 bg-white">

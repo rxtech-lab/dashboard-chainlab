@@ -12,21 +12,21 @@ export type Database = {
       attendance_record: {
         Row: {
           attendance_room_id: number
-          attendant_id: number | null
+          attendant_id: number
           created_at: string
           id: number
           wallet_address: string
         }
         Insert: {
           attendance_room_id: number
-          attendant_id?: number | null
+          attendant_id: number
           created_at?: string
           id?: number
           wallet_address: string
         }
         Update: {
           attendance_room_id?: number
-          attendant_id?: number | null
+          attendant_id?: number
           created_at?: string
           id?: number
           wallet_address?: string
@@ -82,27 +82,41 @@ export type Database = {
       }
       attendant: {
         Row: {
+          admin: number
           created_at: string
           first_name: string | null
           id: number
           last_name: string | null
           uid: string
+          wallet_address: string | null
         }
         Insert: {
+          admin: number
           created_at?: string
           first_name?: string | null
           id?: number
           last_name?: string | null
           uid: string
+          wallet_address?: string | null
         }
         Update: {
+          admin?: number
           created_at?: string
           first_name?: string | null
           id?: number
           last_name?: string | null
           uid?: string
+          wallet_address?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "attendant_admin_fkey"
+            columns: ["admin"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user: {
         Row: {

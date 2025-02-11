@@ -3,12 +3,13 @@
 import { ethers } from "ethers";
 import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 import supabase from "./supabase";
-import { COOKIE_NAME, SIGN_IN_MESSAGE } from "./auth.constants";
+import { ADMIN_COOKIE_NAME } from "./auth.constants";
 import { SessionResponse } from "web3-connect-react";
 import { SignJWT, jwtVerify } from "jose";
 import { createSecretKey } from "crypto";
 import redis from "./redis";
 import { Database } from "./database.types";
+import { Config, getAdminSignInMessage } from "@/config/config";
 
 export async function isAuthenticated(cookie: ReadonlyRequestCookies) {
   const session = await getSession(cookie);
@@ -29,7 +30,7 @@ export async function getSession(
   | (SessionResponse & Database["public"]["Tables"]["user"]["Row"])
   | { isAuth: false }
 > {
-  const token = cookie.get(COOKIE_NAME);
+  const token = cookie.get(ADMIN_COOKIE_NAME);
   if (!token) {
     return {
       isAuth: false,
@@ -41,10 +42,6 @@ export async function getSession(
   );
 
   return value.payload as any;
-}
-
-export function concatMessage(message: string, nonce: string) {
-  return `${message}\n\nNonce: ${nonce}`;
 }
 
 /**
@@ -65,7 +62,7 @@ export async function saveSession(
       error: "Nonce not found",
     };
   }
-  const message = concatMessage(SIGN_IN_MESSAGE, nonce as string);
+  const message = getAdminSignInMessage(nonce as string);
   const isValid = verifyMessageSignature(message, signature, walletAddress);
   if (!isValid) {
     return {
@@ -96,10 +93,10 @@ export async function saveSession(
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("144h")
     .sign(secretKey);
-  cookie.set(COOKIE_NAME, token, {
+  cookie.set(ADMIN_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    maxAge: 144 * 60 * 60,
+    maxAge: Config.Authentication.defaultCookieExpiration,
   });
   return {
     error: undefined,

@@ -1,4 +1,4 @@
-import AttendanceDetailView from "@/components/pages/AttendanceDetailView";
+import AttendanceDetailView from "@/components/pages/attendance/AttendanceDetailView";
 import { notFound } from "next/navigation";
 import { getAttendance } from "./actions";
 import { Metadata } from "next";

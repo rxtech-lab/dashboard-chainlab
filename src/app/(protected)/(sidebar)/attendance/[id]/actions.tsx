@@ -1,6 +1,7 @@
 "use server";
 
 import { Config } from "@/config/config";
+import { getAttendanceNonceKey } from "@/lib/attendance";
 import { isAuthenticated } from "@/lib/auth";
 import redis from "@/lib/redis";
 import supabase from "@/lib/supabase";
@@ -106,7 +107,7 @@ export async function generateAttendanceUrl(id: number) {
 
   // save nonce to redis
 
-  const key = `attendance-room:${id}:nonce`;
+  const key = getAttendanceNonceKey(id);
   await redis.set(key, nonce, { ex: Config.Attendance.nonceExpiration });
 
   const currentTime = new Date();

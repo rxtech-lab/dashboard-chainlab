@@ -6,18 +6,18 @@ import { useAttendanceUrl } from "@/hooks/useAttendanceUrl";
 import type { Database } from "@/lib/database.types";
 import { useState } from "react";
 import { useSWRConfig } from "swr";
-import UpdateRoomDialog from "./UpdateRoomDialog";
+import UpdateRoomDialog from "../UpdateRoomDialog";
 import dynamic from "next/dynamic";
 import { useAttendanceRecord } from "@/hooks/useAttendanceRecord";
 import Spinner from "@/components/ui/spinner";
 import { motion } from "motion/react";
-import AttendanceRecordList from "../attendance/AttendanceRecordList";
-import { Card } from "../ui/card";
+import AttendanceRecordList from "../../attendance/AttendanceRecordList";
+import { Card } from "../../ui/card";
 
 type AttendanceRoom = Database["public"]["Tables"]["attendance_room"]["Row"];
 
 const QRCodePanel = dynamic(
-  () => import("../attendance/QRCodePanel").then((mod) => mod.default),
+  () => import("../../attendance/QRCodePanel").then((mod) => mod.default),
   {
     ssr: false,
   }

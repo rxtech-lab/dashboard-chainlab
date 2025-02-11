@@ -15,9 +15,10 @@ interface Props {
   sdk: {
     walletProviders: WalletProvider[];
   };
+  connect: (provider: WalletProvider) => void;
 }
 
-export function DesktopAuthModal({ sdk }: Props) {
+export function DesktopAuthModal({ sdk, connect }: Props) {
   const initialWidth = "min(500px, 45vw)";
   const animateWidth = "min(1000px, 90vw)";
   return (
@@ -51,6 +52,7 @@ export function DesktopAuthModal({ sdk }: Props) {
                   key={provider.metadata.name}
                   provider={provider}
                   isEnabled={provider.isEnabled(sdk.walletProviders)}
+                  connect={connect}
                 />
               ))}
             </div>
