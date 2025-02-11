@@ -24,6 +24,8 @@ export function Providers({ children, session }: ProvidersProps) {
     <EnvironmentContextProvider isMobile={isMobile} isTest={false}>
       <WalletContextProvider
         session={session}
+        listenToAccountChanges={false}
+        listenToChainChanges={false}
         providers={[
           MetaMaskProvider,
           WalletConnectProvider({

@@ -9,6 +9,10 @@ export const Config = {
     version: process.env.VERCEL_GIT_COMMIT_REF,
     pageLimit: 10,
   },
+  Attendance: {
+    nonceExpiration: 30,
+    dataAutoRefreshInterval: 1000 * 10,
+  },
 };
 
 export const SidebarItems = {
