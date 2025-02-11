@@ -12,6 +12,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import UpdateRoomDialog from "./UpdateRoomDialog";
+import Link from "next/link";
 
 type AttendanceRoom = Database["public"]["Tables"]["attendance_room"]["Row"];
 
@@ -173,12 +174,12 @@ function AttendanceRoomCard({ room }: AttendanceRoomCardProps) {
         <div className="text-sm text-gray-600">
           <p>Created: {new Date(room.created_at).toLocaleDateString()}</p>
         </div>
-        <button
+        <Link
           className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors duration-200"
-          onClick={() => setIsLoading(true)}
+          href={`/attendance/${room.id}`}
         >
           View Details →
-        </button>
+        </Link>
       </div>
     </div>
   );
