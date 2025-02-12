@@ -1,18 +1,19 @@
 "use client";
 
 import { updateAttendanceRoom } from "@/app/(internal)/(protected)/actions";
+import Spinner from "@/components/ui/spinner";
 import { useToast } from "@/hooks/use-toast";
+import { useAttendanceRecord } from "@/hooks/useAttendanceRecord";
 import { useAttendanceUrl } from "@/hooks/useAttendanceUrl";
 import type { Database } from "@/lib/database.types";
+import { motion } from "motion/react";
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { useSWRConfig } from "swr";
-import UpdateRoomDialog from "../UpdateRoomDialog";
-import dynamic from "next/dynamic";
-import { useAttendanceRecord } from "@/hooks/useAttendanceRecord";
-import Spinner from "@/components/ui/spinner";
-import { motion } from "motion/react";
 import AttendanceRecordList from "../../attendance/AttendanceRecordList";
 import { Card } from "../../ui/card";
+import RoomActions from "./RoomActions";
+import { refreshNonce } from "@/app/(internal)/(protected)/(sidebar)/attendance/[id]/actions";
 
 type AttendanceRoom = Database["public"]["Tables"]["attendance_room"]["Row"];
 
@@ -40,6 +41,17 @@ export default function AttendanceDetailView({
   const handleToggle = async () => {
     setIsLoading(true);
 
+    if (!isOpen) {
+      const { error } = await refreshNonce(room.id);
+      if (error) {
+        toast.toast({
+          title: "Error",
+          description: error,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
     const { error } = await updateAttendanceRoom(room.id, {
       is_open: !isOpen,
     }).finally(() => {
@@ -58,6 +70,7 @@ export default function AttendanceDetailView({
       toast.toast({
         title: "Success",
         description: "Attendance room status updated successfully",
+        variant: "success",
       });
     }
   };
@@ -67,9 +80,19 @@ export default function AttendanceDetailView({
 
   return (
     <div className="max-w-7xl mx-auto p-6 w-full mt-10">
+      <div className="block mb-10 md:hidden">
+        <RoomActions
+          roomId={room.id}
+          roomAlias={room.alias}
+          isDisabled={isLoading}
+          isLoading={isLoading}
+          isOpen={isOpen}
+          handleToggle={handleToggle}
+        />
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* QR Code Panel */}
-        <div className="lg:col-span-1 h-[500px] sticky top-20">
+        <div className="lg:col-span-1 h-[500px] md:sticky top-20">
           <QRCodePanel
             roomId={room.id}
             isLoading={isLoadingTakeAttendanceUrl}
@@ -89,21 +112,15 @@ export default function AttendanceDetailView({
                 </h1>
                 <p className="text-sm text-gray-500">Room ID: {room.id}</p>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Room Status:</span>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={isOpen}
-                      onChange={handleToggle}
-                      disabled={isLoading}
-                    />
-                    <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
-                <UpdateRoomDialog roomId={room.id} currentAlias={room.alias} />
+              <div className="hidden md:block">
+                <RoomActions
+                  roomId={room.id}
+                  roomAlias={room.alias}
+                  isOpen={isOpen}
+                  isLoading={isLoading}
+                  isDisabled={isLoading}
+                  handleToggle={handleToggle}
+                />
               </div>
             </div>
 

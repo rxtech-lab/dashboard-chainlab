@@ -1,15 +1,21 @@
+import { AttendanceSuccessMessage } from "@/components/pages/attendance-take/AttendanceSuccessMessage";
 import AttendantWalletList from "@/components/pages/attendance-take/AttendantWalletList";
+import AttendanceSignOutButton from "@/components/pages/attendance-take/SignOutButton";
+import { getAttendantSession } from "@/lib/attendance";
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
 import { Metadata } from "next";
+import { cookies } from "next/headers";
 import {
   getAllAttendant,
   getAttendantByWalletAddress,
   hasAttendantTakenAttendanceForToday,
 } from "./actions";
-import { cookies } from "next/headers";
-import { getAttendantSession } from "@/lib/attendance";
-import { Check } from "lucide-react";
-import dayjs from "dayjs";
-import AttendanceSignOutButton from "@/components/pages/attendance-take/SignOutButton";
+
+// Initialize dayjs plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 export const metadata: Metadata = {
   title: "Take Attendance",
@@ -41,19 +47,9 @@ export default async function TakeAttendancePage({ params }: { params: any }) {
     return (
       <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
         <div className="w-full max-w-md lg:bg-white rounded-lg lg:shadow-sm p-8 text-center">
-          <div className="mb-6">
-            <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-              <Check className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Attendance Recorded at <br />
-            {dayjs(todayAttendance.data.created_at).format("DD/MM/YYYY HH:mm")}
-          </h2>
-          <p className="text-gray-600 mb-2">
-            You have already taken attendance for today
-          </p>
-
+          <AttendanceSuccessMessage
+            timestamp={todayAttendance.data.created_at}
+          />
           <AttendanceSignOutButton />
         </div>
       </div>

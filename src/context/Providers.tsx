@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { isMobile } from "react-device-detect";
 import {
   EnvironmentContextProvider,
+  InAppWalletProvider,
   MetaMaskProvider,
   SessionResponse,
   WalletConnectProvider,
@@ -30,6 +31,7 @@ export function Providers({ children, session, mode }: ProvidersProps) {
         listenToChainChanges={false}
         providers={[
           MetaMaskProvider,
+          InAppWalletProvider,
           WalletConnectProvider({
             projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID!,
             chains: [ChainConfig],

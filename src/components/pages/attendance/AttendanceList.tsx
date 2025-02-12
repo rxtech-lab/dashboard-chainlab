@@ -69,6 +69,7 @@ function AttendanceRoomCard({ room }: AttendanceRoomCardProps) {
       toast.toast({
         title: "Success",
         description: "Attendance room updated successfully",
+        variant: "success"
       });
     }
   };
@@ -92,6 +93,7 @@ function AttendanceRoomCard({ room }: AttendanceRoomCardProps) {
       toast.toast({
         title: "Success",
         description: "Attendance room deleted successfully",
+        variant: "success"
       });
       router.refresh();
     }

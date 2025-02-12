@@ -72,6 +72,12 @@ export default function AttendantWalletList(props: Props) {
   const addresses = useAddresses("ethereum");
 
   const connect = async (wallet: AvailableProvider) => {
+    const confirm = await window.confirm(
+      `Are you sure you want to connect your wallet using ${wallet}?`
+    );
+    if (!confirm) {
+      return;
+    }
     setIsLoading(true);
     await signIn(wallet, {
       onSignedIn: async (address, provider, session) => {
@@ -93,6 +99,7 @@ export default function AttendantWalletList(props: Props) {
   };
 
   const takeAttendance = async () => {
+    console.log("takeAttendance", user);
     if (addresses.addresses.length === 0) {
       toast.toast({
         title: "Error",
@@ -143,6 +150,7 @@ export default function AttendantWalletList(props: Props) {
         toast.toast({
           title: "Success",
           description: "Attendance taken successfully",
+          variant: "success",
         });
         router.refresh();
       }
@@ -173,6 +181,7 @@ export default function AttendantWalletList(props: Props) {
                 Select your name
               </Label>
               <StyledSelect
+                defaultValue="select"
                 onChange={(e) => {
                   const attendant = props.attendants.find(
                     (attendant) => attendant.userId === e.target.value
@@ -195,12 +204,33 @@ export default function AttendantWalletList(props: Props) {
               </StyledSelect>
             </div>
           )}
+          {props.user !== undefined && (
+            <div className="space-y-2">
+              <div className="flex flex-col space-y-1">
+                <Label className="text-sm font-medium text-gray-500">
+                  Your Name
+                </Label>
+                <div className="text-lg font-semibold text-gray-900">
+                  {props.user.firstName} {props.user.lastName}
+                </div>
+                <div className="text-xs text-gray-500">
+                  ID: {props.user.userId}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-4 lg:mt-4 fixed bottom-0 left-0 right-0 bg-white p-4 lg:p-0 lg:static">
           <Button
-            onClick={takeAttendance}
+            onClick={() => {
+              setIsLoading(true);
+              takeAttendance().finally(() => {
+                setIsLoading(false);
+              });
+            }}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            loading={isLoading}
           >
             Take Attendance
           </Button>

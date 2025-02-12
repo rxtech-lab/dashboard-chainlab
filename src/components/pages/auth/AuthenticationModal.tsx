@@ -46,6 +46,7 @@ export default function AuthenticationModal() {
             toast({
               title: "Success",
               description: "Signed in successfully",
+              variant: "success",
             });
             if (redirect) {
               router.push(redirect);

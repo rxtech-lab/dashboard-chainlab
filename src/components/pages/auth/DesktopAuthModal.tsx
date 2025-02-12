@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import type { WalletProvider } from "web3-connect-react";
 import { LeftPanelContent } from "./LeftPanelContent";
 import { WalletOption } from "./WalletOption";
+import { isMobile } from "react-device-detect";
 
 const ANIMATION_CONFIG = {
   duration: 1,
@@ -44,17 +45,21 @@ export function DesktopAuthModal({ sdk, connect }: Props) {
               ease: ANIMATION_CONFIG.ease,
             }}
             style={{ width: initialWidth }}
-            className="absolute inset-0 left-1/2 p-8 flex flex-col justify-center bg-gradient-to-br from-slate-50 to-slate-100"
+            className="absolute inset-0 left-1/2 bg-gradient-to-br from-slate-50 to-slate-100"
           >
-            <div className="grid gap-4">
-              {sdk.walletProviders.map((provider) => (
-                <WalletOption
-                  key={provider.metadata.name}
-                  provider={provider}
-                  isEnabled={provider.isEnabled(sdk.walletProviders)}
-                  connect={connect}
-                />
-              ))}
+            <div className="h-full w-full p-8 overflow-y-auto">
+              <div className="grid gap-4">
+                {sdk.walletProviders
+                  .filter((provider) => provider.isVisible(isMobile))
+                  .map((provider) => (
+                    <WalletOption
+                      key={provider.metadata.name}
+                      provider={provider}
+                      isEnabled={provider.isEnabled(sdk.walletProviders)}
+                      connect={connect}
+                    />
+                  ))}
+              </div>
             </div>
           </motion.div>
 

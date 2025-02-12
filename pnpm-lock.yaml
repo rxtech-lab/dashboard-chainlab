@@ -108,8 +108,8 @@ importers:
         specifier: ^11.0.5
         version: 11.0.5
       web3-connect-react:
-        specifier: ^0.6.8
-        version: 0.6.8(@upstash/redis@1.34.4)(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(utf-8-validate@5.0.10)
+        specifier: ^0.6.9
+        version: 0.6.9(@upstash/redis@1.34.4)(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(utf-8-validate@5.0.10)
       zod:
         specifier: ^3.24.1
         version: 3.24.1
@@ -3569,8 +3569,8 @@ packages:
       react:
         optional: true
 
-  web3-connect-react@0.6.8:
-    resolution: {integrity: sha512-CjaTRu/xUSIW8sAN0WTwe8zQl5zlZns4bMBqzCc9gdmVPTa8S1uUAe3cl5moeMNMPKi8GYjWisHgu7rl+cd6+g==}
+  web3-connect-react@0.6.9:
+    resolution: {integrity: sha512-ggST2wIWtayI5u0SNvNMfHvTZwHtqik6Gohzbgf/ObIg8ZCwQ6ibnOF201FG8KND0XnBEWL7u9AJqwNh8f1YBA==}
 
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
@@ -8260,7 +8260,7 @@ snapshots:
       '@types/react': 19.0.8
       react: 19.0.0
 
-  web3-connect-react@0.6.8(@upstash/redis@1.34.4)(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(utf-8-validate@5.0.10):
+  web3-connect-react@0.6.9(@upstash/redis@1.34.4)(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(utf-8-validate@5.0.10):
     dependencies:
       '@biomejs/biome': 1.9.4
       '@ethereumjs/tx': 5.4.0
