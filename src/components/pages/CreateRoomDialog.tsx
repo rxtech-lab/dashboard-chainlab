@@ -51,6 +51,7 @@ export default function CreateRoomDialog() {
       toast.toast({
         title: "Success",
         description: "Room created successfully",
+        variant: "success"
       });
       form.reset();
       setOpen(false);

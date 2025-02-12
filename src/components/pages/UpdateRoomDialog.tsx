@@ -60,6 +60,7 @@ export default function UpdateRoomDialog({
       toast.toast({
         title: "Success",
         description: "Room updated successfully",
+        variant: "success"
       });
       form.reset({ alias: data.alias });
       setOpen(false);
