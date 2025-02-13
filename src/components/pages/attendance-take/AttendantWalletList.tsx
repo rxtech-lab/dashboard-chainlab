@@ -139,7 +139,7 @@ export default function AttendantWalletList(props: Props) {
     try {
       const address = addresses.addresses[0];
       const signature = await sdk.provider.signMessage(
-        getAttendantSignInMessage(user, nonce),
+        getAttendantSignInMessage(props.user ?? user, nonce),
         {}
       );
       const { error } = await takeAttendanceAction(
@@ -179,6 +179,8 @@ export default function AttendantWalletList(props: Props) {
       </div>
     );
   }
+
+  console.log("isAllAttendeesDisabled", allAttendeesDisabled, user);
 
   if (isSignedIn) {
     return (
@@ -249,7 +251,7 @@ export default function AttendantWalletList(props: Props) {
             }}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             loading={isLoading}
-            disabled={allAttendeesDisabled || !user}
+            disabled={allAttendeesDisabled && !props.user}
           >
             Take Attendance
           </Button>
