@@ -1,0 +1,64 @@
+// This is your Prisma schema file
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AttendanceRoom {
+  id        Int                @id @default(autoincrement())
+  createdAt DateTime           @default(now()) @map("created_at")
+  alias     String
+  isOpen    Boolean            @default(true) @map("is_open")
+  createdBy Int                @map("created_by")
+  creator   User               @relation(fields: [createdBy], references: [id])
+  records   AttendanceRecord[]
+
+  @@map("attendance_room")
+}
+
+model AttendanceRecord {
+  id               Int            @id @default(autoincrement())
+  createdAt        DateTime       @default(now()) @map("created_at")
+  attendantId      Int            @map("attendant_id")
+  attendanceRoomId Int            @map("attendance_room_id")
+  attendant        Attendant      @relation(fields: [attendantId], references: [id])
+  attendanceRoom   AttendanceRoom @relation(fields: [attendanceRoomId], references: [id])
+
+  @@map("attendance_record")
+}
+
+model Attendant {
+  id            Int                @id @default(autoincrement())
+  createdAt     DateTime           @default(now()) @map("created_at")
+  lastName      String             @map("last_name")
+  firstName     String             @map("first_name")
+  uid           String             @unique
+  admin         Int?
+  walletAddress String?            @map("wallet_address")
+  adminUser     User?              @relation(fields: [admin], references: [id])
+  records       AttendanceRecord[]
+
+  @@map("attendant")
+}
+
+model User {
+  id            Int              @id @default(autoincrement())
+  createdAt     DateTime         @default(now()) @map("created_at")
+  walletAddress String           @unique @map("wallet_address")
+  role          Role             @default(USER)
+  attendants    Attendant[]
+  rooms         AttendanceRoom[]
+
+  @@map("user")
+}
+
+enum Role {
+  ADMIN
+  USER
+}

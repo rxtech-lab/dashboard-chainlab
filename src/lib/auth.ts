@@ -2,15 +2,15 @@
 
 import { ethers } from "ethers";
 import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
-import supabase from "./supabase";
 import { ADMIN_COOKIE_NAME } from "./auth.constants";
 import { SessionResponse } from "web3-connect-react";
 import { SignJWT, jwtVerify } from "jose";
 import { createSecretKey } from "crypto";
 import redis from "./redis";
-import { Database } from "./database.types";
 import { Config, getAdminSignInMessage } from "@/config/config";
 import dayjs from "dayjs";
+import { prisma } from "./database";
+import { Role, User } from "@prisma/client";
 
 export async function isAuthenticated(cookie: ReadonlyRequestCookies) {
   const session = await getSession(cookie);
@@ -27,10 +27,7 @@ export async function isAuthenticated(cookie: ReadonlyRequestCookies) {
 
 export async function getSession(
   cookie: ReadonlyRequestCookies
-): Promise<
-  | (SessionResponse & Database["public"]["Tables"]["user"]["Row"])
-  | { isAuth: false }
-> {
+): Promise<(SessionResponse & User) | { isAuth: false }> {
   const token = cookie.get(ADMIN_COOKIE_NAME);
   if (!token) {
     return {
@@ -130,29 +127,27 @@ export function verifyMessageSignature(
  */
 async function adminOnly(
   walletAddress: string
-): Promise<
-  [boolean, Database["public"]["Tables"]["user"]["Row"] | null, string | null]
-> {
-  const { data, error } = await supabase()
-    .from("user")
-    .select("*")
-    .eq("wallet_address", walletAddress);
+): Promise<[boolean, User | null, string | null]> {
+  try {
+    const user = await prisma.user.findFirst({
+      where: {
+        walletAddress: walletAddress,
+      },
+    });
 
-  if (error) {
+    if (!user) {
+      return [false, null, "User not found"];
+    }
+
+    if (user.role !== Role.ADMIN) {
+      return [false, null, "User is not an admin"];
+    }
+
+    return [true, user, null];
+  } catch (error) {
     console.error(error);
-    return [false, null, error.message];
+    return [false, null, "Database error occurred"];
   }
-
-  if (data.length === 0) {
-    return [false, null, "User not found"];
-  }
-
-  const user = data[0];
-  if (user.role !== "ADMIN") {
-    return [false, null, "User is not an admin"];
-  }
-
-  return [true, user, null];
 }
 
 export async function signIn(

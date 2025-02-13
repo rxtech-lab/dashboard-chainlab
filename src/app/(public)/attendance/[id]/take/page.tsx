@@ -32,15 +32,15 @@ export default async function TakeAttendancePage({ params }: { params: any }) {
   );
 
   if (attendants.error) {
-    return <div>{attendants.error}</div>;
+    return <div>Attendants not found: {attendants.error}</div>;
   }
 
   if (attendant.error) {
-    return <div>{attendant.error}</div>;
+    return <div>Attendant not found: {attendant.error}</div>;
   }
 
   if (todayAttendance.error) {
-    return <div>{todayAttendance.error}</div>;
+    return <div>Today's attendance not found: {todayAttendance.error}</div>;
   }
 
   if (todayAttendance.data) {
@@ -48,7 +48,7 @@ export default async function TakeAttendancePage({ params }: { params: any }) {
       <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
         <div className="w-full max-w-md lg:bg-white rounded-lg lg:shadow-sm p-8 text-center">
           <AttendanceSuccessMessage
-            timestamp={todayAttendance.data.created_at}
+            timestamp={todayAttendance.data.createdAt.toISOString()}
           />
           <AttendanceSignOutButton />
         </div>

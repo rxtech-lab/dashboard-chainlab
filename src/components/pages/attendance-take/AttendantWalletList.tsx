@@ -63,13 +63,23 @@ export default function AttendantWalletList(props: Props) {
   const searchParams = useSearchParams();
   const params = useParams();
   const router = useRouter();
-  const [user, setUser] = useState<Props["user"] | null>(
-    props.user ?? props.attendants.length > 0 ? props.attendants[0] : null
-  );
+  const [user, setUser] = useState<Props["user"] | null>(() => {
+    if (props.user) return props.user;
+    if (!props.attendants.length) return null;
+
+    // Find first non-disabled attendant
+    const firstEnabledAttendant = props.attendants.find((a) => !a.disabled);
+    return firstEnabledAttendant || null;
+  });
 
   const nonce = searchParams.get("nonce");
   const roomId = params.id as string;
   const addresses = useAddresses("ethereum");
+
+  // Add this check for all disabled attendants
+  const allAttendeesDisabled = props.attendants?.every(
+    (attendant) => attendant.disabled
+  );
 
   const connect = async (wallet: AvailableProvider) => {
     const confirm = await window.confirm(
@@ -99,7 +109,6 @@ export default function AttendantWalletList(props: Props) {
   };
 
   const takeAttendance = async () => {
-    console.log("takeAttendance", user);
     if (addresses.addresses.length === 0) {
       toast.toast({
         title: "Error",
@@ -180,28 +189,37 @@ export default function AttendantWalletList(props: Props) {
               <Label className="block text-sm font-medium text-gray-700">
                 Select your name
               </Label>
-              <StyledSelect
-                defaultValue="select"
-                onChange={(e) => {
-                  const attendant = props.attendants.find(
-                    (attendant) => attendant.userId === e.target.value
-                  );
-                  if (attendant) {
-                    setUser(attendant);
-                  }
-                }}
-              >
-                {props.attendants?.map((attendant) => (
-                  <option
-                    key={attendant.userId}
-                    value={attendant.userId}
-                    disabled={attendant.disabled}
-                    className={attendant.disabled ? "text-gray-400" : ""}
-                  >
-                    {attendant.firstName} {attendant.lastName}
+              {allAttendeesDisabled ? (
+                <div className="text-sm text-red-500 mt-2">
+                  All attendants have already taken attendance
+                </div>
+              ) : (
+                <StyledSelect
+                  value={user?.id || ""}
+                  onChange={(e) => {
+                    const attendant = props.attendants.find(
+                      (attendant) => attendant.id.toString() === e.target.value
+                    );
+                    if (attendant) {
+                      setUser(attendant);
+                    }
+                  }}
+                >
+                  <option value="" disabled>
+                    Select your name
                   </option>
-                ))}
-              </StyledSelect>
+                  {props.attendants?.map((attendant) => (
+                    <option
+                      key={attendant.userId}
+                      value={attendant.id}
+                      disabled={attendant.disabled}
+                      className={attendant.disabled ? "text-gray-400" : ""}
+                    >
+                      {attendant.firstName} {attendant.lastName}
+                    </option>
+                  ))}
+                </StyledSelect>
+              )}
             </div>
           )}
           {props.user !== undefined && (
@@ -231,6 +249,7 @@ export default function AttendantWalletList(props: Props) {
             }}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             loading={isLoading}
+            disabled={allAttendeesDisabled || !user}
           >
             Take Attendance
           </Button>

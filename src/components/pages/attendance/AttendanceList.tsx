@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
-import type { Database } from "@/lib/database.types";
 import Spinner from "../../ui/spinner";
 import {
   deleteAttendanceRoom,
@@ -13,8 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import UpdateRoomDialog from "../UpdateRoomDialog";
 import Link from "next/link";
-
-type AttendanceRoom = Database["public"]["Tables"]["attendance_room"]["Row"];
+import { AttendanceRoom } from "@prisma/client";
 
 export function AttendanceRoomList({ rooms }: { rooms: AttendanceRoom[] }) {
   return (
@@ -55,7 +53,7 @@ function AttendanceRoomCard({ room }: AttendanceRoomCardProps) {
   const handleToggle = async () => {
     setIsLoading(true);
     const { error } = await updateAttendanceRoom(room.id, {
-      is_open: !room.is_open,
+      isOpen: !room.isOpen,
     }).finally(() => {
       setIsLoading(false);
     });
@@ -69,7 +67,7 @@ function AttendanceRoomCard({ room }: AttendanceRoomCardProps) {
       toast.toast({
         title: "Success",
         description: "Attendance room updated successfully",
-        variant: "success"
+        variant: "success",
       });
     }
   };
@@ -93,7 +91,7 @@ function AttendanceRoomCard({ room }: AttendanceRoomCardProps) {
       toast.toast({
         title: "Success",
         description: "Attendance room deleted successfully",
-        variant: "success"
+        variant: "success",
       });
       router.refresh();
     }
@@ -136,7 +134,7 @@ function AttendanceRoomCard({ room }: AttendanceRoomCardProps) {
             <input
               type="checkbox"
               className="sr-only peer"
-              defaultChecked={room.is_open}
+              defaultChecked={room.isOpen}
               onChange={handleToggle}
             />
             <div
@@ -174,7 +172,7 @@ function AttendanceRoomCard({ room }: AttendanceRoomCardProps) {
       </div>
       <div className="mt-4 flex items-center justify-between">
         <div className="text-sm text-gray-600">
-          <p>Created: {new Date(room.created_at).toLocaleDateString()}</p>
+          <p>Created: {new Date(room.createdAt).toLocaleDateString()}</p>
         </div>
         <Link
           className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors duration-200"

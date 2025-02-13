@@ -5,8 +5,12 @@ import { useRouter } from "next/navigation";
 import { useWallet } from "web3-connect-react";
 
 export default function AttendanceSignOutButton() {
-  const { signOut } = useWallet();
+  const { isSignedIn, signOut } = useWallet();
   const router = useRouter();
+
+  if (!isSignedIn) {
+    return null;
+  }
 
   return (
     <Button
