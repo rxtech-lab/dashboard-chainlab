@@ -2,78 +2,90 @@
 
 import { FormValues } from "@/components/pages/createRoom.type";
 import { isAuthenticated } from "@/lib/auth";
-import supabase from "@/lib/supabase";
+import { prisma } from "@/lib/database";
+import { handlePrismaError } from "@/lib/prisma.error";
 import { cookies } from "next/headers";
+
+// Custom error type for better error handling
+type ActionResponse = {
+  success: boolean;
+  error?: string;
+};
 
 /**
  * Creates a new attendance room.
  * @param roomId The alias of the room.
  * @returns The created room.
  */
-export async function createAttendanceRoom(data: FormValues): Promise<{
-  success: boolean;
-  error?: string;
-}> {
-  const cookie = await cookies();
-  const { error, session } = await isAuthenticated(cookie);
-  if (error) {
-    return {
-      success: false,
-      error: error,
-    };
-  }
-  const { error: insertError } = await supabase()
-    .from("attendance_room")
-    .insert({
-      ...data,
-      created_by: session!.id,
+export async function createAttendanceRoom(
+  data: FormValues
+): Promise<ActionResponse> {
+  try {
+    const cookie = await cookies();
+    const { error, session } = await isAuthenticated(cookie);
+    if (error) {
+      return { success: false, error };
+    }
+    if (!session) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    await prisma.attendanceRoom.create({
+      data: {
+        ...data,
+        createdBy: session.id,
+      },
     });
 
-  if (insertError) {
+    return { success: true };
+  } catch (error) {
     return {
       success: false,
-      error: insertError.message,
+      error: handlePrismaError(error),
     };
   }
-
-  return {
-    success: true,
-  };
 }
 
 export async function getAttendanceRooms(page: number, limit: number) {
-  const cookie = await cookies();
-  const { error, session } = await isAuthenticated(cookie);
-  if (error) {
-    throw new Error(error);
+  try {
+    const cookie = await cookies();
+    const { error, session } = await isAuthenticated(cookie);
+    if (error) {
+      throw new Error(error);
+    }
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [rooms, totalCount] = await Promise.all([
+      prisma.attendanceRoom.findMany({
+        where: {
+          createdBy: session.id,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.attendanceRoom.count({
+        where: {
+          createdBy: session.id,
+        },
+      }),
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      data: rooms,
+      totalPages,
+    };
+  } catch (error) {
+    throw new Error(handlePrismaError(error));
   }
-
-  const [roomsResponse, countResponse] = await Promise.all([
-    supabase()
-      .from("attendance_room")
-      .select("*")
-      .eq("created_by", session!.id)
-      .order("created_at", { ascending: false })
-      .range((page - 1) * limit, page * limit - 1),
-    supabase()
-      .from("attendance_room")
-      .select("*", { count: "exact", head: true }),
-  ]);
-
-  if (roomsResponse.error) {
-    throw new Error(roomsResponse.error.message);
-  }
-
-  if (countResponse.error) {
-    throw new Error(countResponse.error.message);
-  }
-
-  const totalPages = Math.ceil((countResponse.count || 0) / limit);
-
-  return {
-    data: roomsResponse.data,
-    totalPages,
-  };
 }
 
 /**
@@ -84,32 +96,39 @@ export async function getAttendanceRooms(page: number, limit: number) {
  */
 export async function updateAttendanceRoom(
   id: number,
-  data: { is_open: boolean }
-) {
-  const cookie = await cookies();
-  const { error, session } = await isAuthenticated(cookie);
-  if (error) {
+  data: { isOpen: boolean }
+): Promise<ActionResponse> {
+  try {
+    const cookie = await cookies();
+    const { error, session } = await isAuthenticated(cookie);
+    if (error) {
+      return { success: false, error };
+    }
+    if (!session) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const result = await prisma.attendanceRoom.updateMany({
+      where: {
+        id,
+        createdBy: session.id,
+      },
+      data: {
+        isOpen: data.isOpen,
+      },
+    });
+
+    if (result.count === 0) {
+      return { success: false, error: "Room not found or unauthorized" };
+    }
+
+    return { success: true };
+  } catch (error) {
     return {
       success: false,
-      error: error,
+      error: handlePrismaError(error),
     };
   }
-  const { error: updateError } = await supabase()
-    .from("attendance_room")
-    .update(data)
-    .eq("id", id)
-    .eq("created_by", session!.id);
-
-  if (updateError) {
-    return {
-      success: false,
-      error: updateError.message,
-    };
-  }
-
-  return {
-    success: true,
-  };
 }
 
 /**
@@ -117,31 +136,37 @@ export async function updateAttendanceRoom(
  * @param id The id of the attendance room.
  * @returns The deleted attendance room.
  */
-export async function deleteAttendanceRoom(id: number) {
-  const cookie = await cookies();
-  const { error, session } = await isAuthenticated(cookie);
-  if (error) {
+export async function deleteAttendanceRoom(
+  id: number
+): Promise<ActionResponse> {
+  try {
+    const cookie = await cookies();
+    const { error, session } = await isAuthenticated(cookie);
+    if (error) {
+      return { success: false, error };
+    }
+    if (!session) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const result = await prisma.attendanceRoom.deleteMany({
+      where: {
+        id,
+        createdBy: session.id,
+      },
+    });
+
+    if (result.count === 0) {
+      return { success: false, error: "Room not found or unauthorized" };
+    }
+
+    return { success: true };
+  } catch (error) {
     return {
       success: false,
-      error: error,
+      error: handlePrismaError(error),
     };
   }
-  const { error: deleteError } = await supabase()
-    .from("attendance_room")
-    .delete()
-    .eq("id", id)
-    .eq("created_by", session!.id);
-
-  if (deleteError) {
-    return {
-      success: false,
-      error: deleteError.message,
-    };
-  }
-
-  return {
-    success: true,
-  };
 }
 
 /**
@@ -153,29 +178,36 @@ export async function deleteAttendanceRoom(id: number) {
 export async function updateAttendanceRoomName(
   id: number,
   data: { alias: string }
-) {
-  const cookie = await cookies();
-  const { error, session } = await isAuthenticated(cookie);
-  if (error) {
+): Promise<ActionResponse> {
+  try {
+    const cookie = await cookies();
+    const { error, session } = await isAuthenticated(cookie);
+    if (error) {
+      return { success: false, error };
+    }
+    if (!session) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const result = await prisma.attendanceRoom.updateMany({
+      where: {
+        id,
+        createdBy: session.id,
+      },
+      data: {
+        alias: data.alias,
+      },
+    });
+
+    if (result.count === 0) {
+      return { success: false, error: "Room not found or unauthorized" };
+    }
+
+    return { success: true };
+  } catch (error) {
     return {
       success: false,
-      error: error,
+      error: handlePrismaError(error),
     };
   }
-  const { error: updateError } = await supabase()
-    .from("attendance_room")
-    .update(data)
-    .eq("created_by", session!.id)
-    .eq("id", id);
-
-  if (updateError) {
-    return {
-      success: false,
-      error: updateError.message,
-    };
-  }
-
-  return {
-    success: true,
-  };
 }

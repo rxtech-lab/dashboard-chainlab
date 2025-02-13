@@ -1,11 +1,12 @@
 "use client";
 
+import { refreshNonce } from "@/app/(internal)/(protected)/(sidebar)/attendance/[id]/actions";
 import { updateAttendanceRoom } from "@/app/(internal)/(protected)/actions";
 import Spinner from "@/components/ui/spinner";
 import { useToast } from "@/hooks/use-toast";
 import { useAttendanceRecord } from "@/hooks/useAttendanceRecord";
 import { useAttendanceUrl } from "@/hooks/useAttendanceUrl";
-import type { Database } from "@/lib/database.types";
+import { AttendanceRoom } from "@prisma/client";
 import { motion } from "motion/react";
 import dynamic from "next/dynamic";
 import { useState } from "react";
@@ -13,9 +14,6 @@ import { useSWRConfig } from "swr";
 import AttendanceRecordList from "../../attendance/AttendanceRecordList";
 import { Card } from "../../ui/card";
 import RoomActions from "./RoomActions";
-import { refreshNonce } from "@/app/(internal)/(protected)/(sidebar)/attendance/[id]/actions";
-
-type AttendanceRoom = Database["public"]["Tables"]["attendance_room"]["Row"];
 
 const QRCodePanel = dynamic(
   () => import("../../attendance/QRCodePanel").then((mod) => mod.default),
@@ -32,7 +30,7 @@ export default function AttendanceDetailView({
   room,
 }: AttendanceDetailViewProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(room.is_open);
+  const [isOpen, setIsOpen] = useState(room.isOpen);
   const { mutate } = useSWRConfig();
   const toast = useToast();
   const { data: attendanceRecord, isLoading: isLoadingAttendanceRecord } =
@@ -53,7 +51,7 @@ export default function AttendanceDetailView({
       }
     }
     const { error } = await updateAttendanceRoom(room.id, {
-      is_open: !isOpen,
+      isOpen: !isOpen,
     }).finally(() => {
       setIsLoading(false);
     });

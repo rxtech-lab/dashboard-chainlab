@@ -50,7 +50,7 @@ model Attendant {
 model User {
   id            Int              @id @default(autoincrement())
   createdAt     DateTime         @default(now()) @map("created_at")
-  walletAddress String           @map("wallet_address")
+  walletAddress String           @unique @map("wallet_address")
   role          Role             @default(USER)
   attendants    Attendant[]
   rooms         AttendanceRoom[]
