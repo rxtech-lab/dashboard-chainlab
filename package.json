@@ -7,10 +7,15 @@
     "postinstall": "prisma generate",
     "dev": "next dev --turbopack",
     "build": "next build",
+    "build:test": "NODE_ENV=test next build",
+    "migrate:test": "dotenv -e .env.test -- prisma migrate dev",
+    "migrate:dev": "dotenv -e .env.local -- prisma migrate dev",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@fastify/cors": "^10.0.2",
     "@hookform/resolvers": "^4.0.0",
     "@neondatabase/serverless": "^0.10.4",
     "@prisma/adapter-neon": "^6.3.1",
@@ -33,6 +38,7 @@
     "clsx": "^2.1.1",
     "dayjs": "^1.11.13",
     "ethers": "^6.13.5",
+    "fastify": "^5.2.1",
     "input-otp": "^1.4.2",
     "jose": "^5.9.6",
     "lucide": "^0.474.0",
@@ -55,9 +61,12 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.50.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^16.4.7",
+    "dotenv-cli": "^7.4.1",
     "eslint": "^9",
     "eslint-config-next": "15.1.6",
     "postcss": "^8",

@@ -8,6 +8,7 @@ import { isMobile } from "react-device-detect";
 import {
   EnvironmentContextProvider,
   InAppWalletProvider,
+  MetaMaskMockProvider,
   MetaMaskProvider,
   SessionResponse,
   WalletConnectProvider,
@@ -24,7 +25,10 @@ export function Providers({ children, session, mode }: ProvidersProps) {
   const router = useRouter();
 
   return (
-    <EnvironmentContextProvider isMobile={isMobile} isTest={false}>
+    <EnvironmentContextProvider
+      isMobile={isMobile}
+      isTest={process.env.IS_TEST === "true"}
+    >
       <WalletContextProvider
         session={session}
         listenToAccountChanges={false}
@@ -44,6 +48,7 @@ export function Providers({ children, session, mode }: ProvidersProps) {
               },
             },
           }),
+          MetaMaskMockProvider,
         ]}
         onSignedOut={async () => {
           if (mode === "internal") {
@@ -52,6 +57,10 @@ export function Providers({ children, session, mode }: ProvidersProps) {
             await signOutPublicly();
           }
           router.refresh();
+        }}
+        environment={{
+          env: "e2e",
+          endpoint: "http://0.0.0.0:4000",
         }}
       >
         {children}
