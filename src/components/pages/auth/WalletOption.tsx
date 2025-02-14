@@ -38,6 +38,7 @@ export function WalletOption({
       </div>
       <div className="ml-auto">
         <Button
+          data-testid={`provider-${provider.metadata.name}-connect-button`}
           onClick={() => {
             setIsConnecting(true);
             connect(provider).finally(() => {

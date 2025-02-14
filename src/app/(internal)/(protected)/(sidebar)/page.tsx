@@ -34,7 +34,10 @@ export default async function Home({ searchParams }: { searchParams: any }) {
   return (
     <>
       <Header breadcrumbs={[{ title: "Home", url: "/" }]} />
-      <div className="bg-white mx-auto w-full px-10 max-w-7xl">
+      <div
+        className="bg-white mx-auto w-full px-10 max-w-7xl"
+        data-testid="attendance-rooms-list"
+      >
         <div className="mt-10 flex justify-end">
           <CreateRoomDialog />
         </div>
