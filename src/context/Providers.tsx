@@ -60,7 +60,7 @@ export function Providers({ children, session, mode }: ProvidersProps) {
         }}
         environment={{
           env: "e2e",
-          endpoint: "http://0.0.0.0:4000",
+          endpoint: `http://0.0.0.0:4000?visibility=${mode}`,
         }}
       >
         {children}

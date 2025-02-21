@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { Check } from "lucide-react";
 import dayjs from "dayjs";
@@ -12,13 +12,15 @@ interface AttendanceSuccessMessageProps {
   timestamp: string;
 }
 
-export function AttendanceSuccessMessage({ timestamp }: AttendanceSuccessMessageProps) {
+export function AttendanceSuccessMessage({
+  timestamp,
+}: AttendanceSuccessMessageProps) {
   // Convert the UTC timestamp to local timezone
   const localTime = dayjs(timestamp).local();
 
   return (
     <>
-      <div className="mb-6">
+      <div className="mb-6" data-testid="attendance-taken-message">
         <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
           <Check className="w-6 h-6 text-green-600" />
         </div>
@@ -32,4 +34,4 @@ export function AttendanceSuccessMessage({ timestamp }: AttendanceSuccessMessage
       </p>
     </>
   );
-} 
+}

@@ -60,7 +60,7 @@ export default function UpdateRoomDialog({
       toast.toast({
         title: "Success",
         description: "Room updated successfully",
-        variant: "success"
+        variant: "success",
       });
       form.reset({ alias: data.alias });
       setOpen(false);
@@ -73,6 +73,7 @@ export default function UpdateRoomDialog({
         onClick={() => setOpen(true)}
         className="text-gray-400 hover:text-blue-600 transition-colors duration-200"
         aria-label="Edit room"
+        data-testid="update-room-button"
       >
         <Pencil className="h-5 w-5" />
       </button>
@@ -100,7 +101,11 @@ export default function UpdateRoomDialog({
                   <FormItem>
                     <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter new name" {...field} />
+                      <Input
+                        placeholder="Enter new name"
+                        {...field}
+                        data-testid="update-room-input"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -112,10 +117,15 @@ export default function UpdateRoomDialog({
                   type="button"
                   variant="outline"
                   onClick={() => setOpen(false)}
+                  data-testid="update-room-cancel-button"
                 >
                   Cancel
                 </Button>
-                <Button type="submit" loading={loading}>
+                <Button
+                  type="submit"
+                  loading={loading}
+                  data-testid="update-room-confirm-button"
+                >
                   Update
                 </Button>
               </div>

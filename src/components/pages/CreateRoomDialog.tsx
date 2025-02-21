@@ -51,7 +51,7 @@ export default function CreateRoomDialog() {
       toast.toast({
         title: "Success",
         description: "Room created successfully",
-        variant: "success"
+        variant: "success",
       });
       form.reset();
       setOpen(false);
@@ -60,7 +60,11 @@ export default function CreateRoomDialog() {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} className="flex items-center gap-2">
+      <Button
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-2"
+        data-testid="create-room-button"
+      >
         <Plus className="h-4 w-4" /> Create new attendance room
       </Button>
       <NativeModal
@@ -87,7 +91,11 @@ export default function CreateRoomDialog() {
                   <FormItem>
                     <FormLabel>Alias</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter alias" {...field} />
+                      <Input
+                        placeholder="Enter alias"
+                        {...field}
+                        data-testid="create-room-input"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -102,7 +110,11 @@ export default function CreateRoomDialog() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" loading={loading}>
+                <Button
+                  type="submit"
+                  loading={loading}
+                  data-testid="confirm-button"
+                >
                   Create
                 </Button>
               </div>
