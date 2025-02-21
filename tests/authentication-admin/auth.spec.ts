@@ -1,20 +1,14 @@
 import { prisma } from "@/lib/database";
 import { expect, test } from "@playwright/test";
 import { ethers } from "ethers";
-import { setupMockMetamaskWithPrivateKey } from "../mockMetamask";
 import { FastifyInstance } from "fastify";
 import { signInWithWallet } from "../helpers/signInHelper";
+import { createMetaMaskController } from "../metamaskServer";
 
 const adminWallet = ethers.Wallet.createRandom();
 let server: FastifyInstance;
 
-const [attendantWallet, attendantWallet2, attendantWallet3, attendantWallet4] =
-  [
-    ethers.Wallet.createRandom(),
-    ethers.Wallet.createRandom(),
-    ethers.Wallet.createRandom(),
-    ethers.Wallet.createRandom(),
-  ];
+const [attendantWallet] = [ethers.Wallet.createRandom()];
 
 test.beforeEach(async () => {
   // add admin wallet to database
@@ -40,7 +34,10 @@ test.afterEach(async () => {
 });
 
 test("sign in with correct credentials and role", async ({ page }) => {
-  server = await signInWithWallet(page, adminWallet);
+  const response = await createMetaMaskController();
+  server = response.server;
+  response.controller.setWallet(adminWallet);
+  await signInWithWallet(page);
 
   // check if the button is not visible
   const button = page.getByTestId("provider-MetaMask-connect-button").first();
@@ -50,7 +47,10 @@ test("sign in with correct credentials and role", async ({ page }) => {
 test("sign in with correct credentials and incorrect role", async ({
   page,
 }) => {
-  server = await signInWithWallet(page, attendantWallet);
+  const response = await createMetaMaskController();
+  server = response.server;
+  response.controller.setWallet(attendantWallet);
+  await signInWithWallet(page);
 
   // check if the button is visible
   const button = page.getByTestId("provider-MetaMask-connect-button").first();
@@ -62,7 +62,10 @@ test("sign in with correct credentials and incorrect role", async ({
 });
 
 test("sign in with incorrect credentials", async ({ page }) => {
-  server = await signInWithWallet(page, attendantWallet2);
+  const response = await createMetaMaskController();
+  server = response.server;
+  response.controller.setWallet(attendantWallet);
+  await signInWithWallet(page);
 
   // check if the button is visible
   const button = page.getByTestId("provider-MetaMask-connect-button").first();

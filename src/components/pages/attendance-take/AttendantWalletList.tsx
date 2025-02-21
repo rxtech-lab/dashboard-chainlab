@@ -15,6 +15,7 @@ import { isMobile } from "react-device-detect";
 import { AvailableProvider, useAddresses, useWallet } from "web3-connect-react";
 import AttendanceSignoutButton from "./SignOutButton";
 import { ChevronDown } from "lucide-react";
+import { verifyMessage } from "ethers";
 
 interface Props {
   user?: {
@@ -138,12 +139,11 @@ export default function AttendantWalletList(props: Props) {
 
     try {
       const address = addresses.addresses[0];
-      const signature = await sdk.provider.signMessage(
-        getAttendantSignInMessage(props.user ?? user, nonce),
-        {}
-      );
+      const message = getAttendantSignInMessage(props.user ?? user, nonce);
+      const signature = await sdk.provider.signMessage(message, {});
+
       const { error } = await takeAttendanceAction(
-        user,
+        props.user ?? user,
         parseInt(roomId),
         nonce,
         signature,
@@ -180,8 +180,6 @@ export default function AttendantWalletList(props: Props) {
     );
   }
 
-  console.log("isAllAttendeesDisabled", allAttendeesDisabled, user);
-
   if (isSignedIn) {
     return (
       <div className="flex flex-col flex-grow">
@@ -206,6 +204,7 @@ export default function AttendantWalletList(props: Props) {
                       setUser(attendant);
                     }
                   }}
+                  data-testid="attendant-select"
                 >
                   <option value="" disabled>
                     Select your name
@@ -252,6 +251,7 @@ export default function AttendantWalletList(props: Props) {
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             loading={isLoading}
             disabled={allAttendeesDisabled && !props.user}
+            data-testid="take-attendance-button"
           >
             Take Attendance
           </Button>
@@ -273,6 +273,7 @@ export default function AttendantWalletList(props: Props) {
           onChange={(e) => {
             connect(e.target.value as AvailableProvider);
           }}
+          data-testid="wallet-select"
         >
           <option value="select" disabled>
             Select a wallet
@@ -284,6 +285,7 @@ export default function AttendantWalletList(props: Props) {
                 key={wallet.metadata.name}
                 value={wallet.metadata.name}
                 disabled={!wallet.isEnabled(sdk.walletProviders)}
+                data-testid={`wallet-option-${wallet.metadata.name}`}
                 className={
                   !wallet.isEnabled(sdk.walletProviders) ? "text-gray-400" : ""
                 }

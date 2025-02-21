@@ -184,7 +184,6 @@ export async function takeAttendance(
 
       userId = updatedAttendant.id;
     } else if (attendant.walletAddress !== address) {
-      console.log("attendant.walletAddress", attendant.walletAddress, address);
       return { error: "This user already has a registered wallet address" };
     }
 

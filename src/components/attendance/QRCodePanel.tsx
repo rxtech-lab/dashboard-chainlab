@@ -134,8 +134,13 @@ export default function QRCodePanel({
         >
           <Tooltip>
             <TooltipTrigger>
-              <div className="p-4 bg-gray-50 rounded-lg !pb-0">
-                <QRCode value={qrCode} size={256} />
+              <div
+                className="p-4 bg-gray-50 rounded-lg !pb-0"
+                onClick={() => {
+                  window.open(qrCode, "_blank");
+                }}
+              >
+                <QRCode value={qrCode} size={256} data-testid="qr-code" />
               </div>
             </TooltipTrigger>
             <TooltipContent>

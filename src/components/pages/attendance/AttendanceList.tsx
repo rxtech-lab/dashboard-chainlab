@@ -102,6 +102,7 @@ function AttendanceRoomCard({ room }: AttendanceRoomCardProps) {
       className={`bg-white rounded-lg shadow-md p-6 border border-gray-200 relative 
         transition-all duration-200 hover:shadow-lg hover:border-gray-300
         ${isLoading ? "pointer-events-none" : ""}`}
+      data-testid="attendance-room-card"
     >
       {isLoading && (
         <motion.div
@@ -152,6 +153,7 @@ function AttendanceRoomCard({ room }: AttendanceRoomCardProps) {
             className="text-gray-400 hover:text-red-600 transition-colors duration-200"
             disabled={isLoading}
             aria-label="Delete room"
+            data-testid="delete-room-button"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
