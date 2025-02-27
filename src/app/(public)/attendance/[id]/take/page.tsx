@@ -10,6 +10,7 @@ import { cookies } from "next/headers";
 import {
   getAllAttendant,
   getAttendantByWalletAddress,
+  getAttendantByWalletAddressForRoom,
   hasAttendantTakenAttendanceForToday,
 } from "./actions";
 
@@ -24,11 +25,18 @@ export const metadata: Metadata = {
 export default async function TakeAttendancePage({ params }: { params: any }) {
   const cookieStore = await cookies();
   const session = await getAttendantSession(cookieStore);
-  const attendants = await getAllAttendant(parseInt((await params).id));
-  const attendant = await getAttendantByWalletAddress(session.walletAddress!);
+  const roomId = parseInt((await params).id);
+  const attendants = await getAllAttendant(roomId);
+
+  // Pass roomId to only get attendant if they belong to this room
+  const attendant = await getAttendantByWalletAddress(
+    session.walletAddress!,
+    roomId
+  );
+
   const todayAttendance = await hasAttendantTakenAttendanceForToday(
     attendant.data?.id!,
-    parseInt((await params).id)
+    roomId
   );
 
   if (attendants.error) {
