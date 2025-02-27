@@ -227,4 +227,76 @@ test.describe("room", () => {
     );
     await expect(attendanceTakenMessage).toBeVisible();
   });
+
+  test("should be able to take attendance in multiple rooms with same wallet", async ({
+    page,
+    context,
+  }) => {
+    // update attendant 1 with wallet address
+    await prisma.attendant.update({
+      where: { id: attendant.id },
+      data: { walletAddress: attendantWallet.address },
+    });
+
+    // Create first room and take attendance
+    const { room: room1, controller } = await signInAndCreateRoom(page);
+    await prisma.attendanceRecord.create({
+      data: {
+        attendantId: attendant.id,
+        attendanceRoomId: room1.id,
+      },
+    });
+
+    // Create second room
+    const room2 = await prisma.attendanceRoom.create({
+      data: {
+        alias: "Test Room 2",
+        createdBy: admin.id,
+      },
+    });
+
+    // Go to the second room page
+    await page.goto(`/attendance/${room2.id}`);
+
+    const qrCode = page.getByTestId("qr-code");
+    await expect(qrCode).toBeVisible();
+
+    // Wait for the new page to be created when clicking the QR code
+    const [newPage] = await Promise.all([
+      context.waitForEvent("page"),
+      qrCode.click(),
+    ]);
+
+    controller.setWallet(attendantWallet);
+    // Wait for the new page to load
+    await newPage.waitForLoadState();
+    newPage.on("dialog", (dialog) => dialog.accept());
+
+    // Continue the test using the new page
+    await expect(newPage.getByTestId("take-attendance-page")).toBeVisible();
+
+    await newPage.getByTestId("wallet-select").selectOption("MetaMask");
+
+    // The user should be able to take attendance in the second room
+    // even though they already have a wallet registered and attendance in the first room
+    const takeAttendanceButton = newPage.getByTestId("take-attendance-button");
+    await expect(takeAttendanceButton).toBeVisible();
+
+    await takeAttendanceButton.click();
+
+    // Verify attendance was taken successfully
+    const attendanceTakenMessage = newPage.getByTestId("attendance-taken-message");
+    await expect(attendanceTakenMessage).toBeVisible();
+
+    // Verify that attendance records exist in both rooms
+    const attendanceRecords = await prisma.attendanceRecord.findMany({
+      where: {
+        attendantId: attendant.id,
+      },
+    });
+    
+    expect(attendanceRecords.length).toBe(2);
+    expect(attendanceRecords.some(record => record.attendanceRoomId === room1.id)).toBeTruthy();
+    expect(attendanceRecords.some(record => record.attendanceRoomId === room2.id)).toBeTruthy();
+  });
 });
