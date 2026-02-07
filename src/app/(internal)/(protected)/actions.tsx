@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { attendanceRoom } from "@/lib/db/schema";
 import { handleDatabaseError } from "@/lib/db/error";
 import { cookies } from "next/headers";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, count } from "drizzle-orm";
 
 // Custom error type for better error handling
 type ActionResponse = {
@@ -68,11 +68,11 @@ export async function getAttendanceRooms(page: number, limit: number) {
       .limit(limit);
 
     const countResult = await db
-      .select({ count: attendanceRoom.id })
+      .select({ count: count() })
       .from(attendanceRoom)
       .where(eq(attendanceRoom.createdBy, session.id));
 
-    const totalCount = countResult.length;
+    const totalCount = countResult[0].count;
     const totalPages = Math.ceil(totalCount / limit);
 
     return {

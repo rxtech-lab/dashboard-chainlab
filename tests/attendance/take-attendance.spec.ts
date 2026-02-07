@@ -119,7 +119,7 @@ test.describe("room", () => {
     await expect(takeAttendanceButton).toBeVisible();
 
     // select first attendant
-    await attendantSelect.selectOption(attendantTable.id.toString());
+    await attendantSelect.selectOption(attendant.id.toString());
     // check take attendance button
     await takeAttendanceButton.click();
 

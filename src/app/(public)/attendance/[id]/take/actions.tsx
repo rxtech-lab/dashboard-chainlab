@@ -243,13 +243,13 @@ export async function takeAttendance(
     );
 
     // Get the attendant we're trying to register
-    const attendantResult = await db
+    const attendantRecords = await db
       .select()
       .from(attendant)
       .where(eq(attendant.id, user.id))
       .limit(1);
 
-    const foundAttendant = attendantResult[0];
+    const foundAttendant = attendantRecords[0];
 
     if (!foundAttendant) {
       return { error: "Attendant not found" };
@@ -280,12 +280,12 @@ export async function takeAttendance(
         .returning();
 
       // Use the updated attendant's ID
-      const userId = updatedAttendant[0].id;
+      const attendantId = updatedAttendant[0].id;
 
       // Add the attendance record
       await db.insert(attendanceRecord).values({
         attendanceRoomId: roomId,
-        attendantId: userId,
+        attendantId: attendantId,
       });
 
       return { error: null };
