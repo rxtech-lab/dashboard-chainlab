@@ -6,7 +6,7 @@ import Spinner from "@/components/ui/spinner";
 import { useToast } from "@/hooks/use-toast";
 import { useAttendanceRecord } from "@/hooks/useAttendanceRecord";
 import { useAttendanceUrl } from "@/hooks/useAttendanceUrl";
-import { AttendanceRoom } from "@prisma/client";
+import { attendanceRoom } from "@/lib/db/schema";
 import { motion } from "motion/react";
 import dynamic from "next/dynamic";
 import { useState } from "react";
@@ -14,6 +14,8 @@ import { useSWRConfig } from "swr";
 import AttendanceRecordList from "../../attendance/AttendanceRecordList";
 import { Card } from "../../ui/card";
 import RoomActions from "./RoomActions";
+
+type AttendanceRoom = typeof attendanceRoom.$inferSelect;
 
 const QRCodePanel = dynamic(
   () => import("../../attendance/QRCodePanel").then((mod) => mod.default),
