@@ -1,10 +1,19 @@
-import { prisma } from "@/lib/database";
+import { db } from "@/lib/db";
+import { 
+  user, 
+  attendant as attendantTable, 
+  attendanceRoom as attendanceRoomTable, 
+  attendanceRecord as attendanceRecordTable 
+} from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import { expect, Page, test } from "@playwright/test";
 import { ethers } from "ethers";
 import { FastifyInstance } from "fastify";
 import { signInWithWallet } from "../helpers/signInHelper";
-import { User, Attendant } from "@prisma/client";
+import { User } from "@/lib/auth";
 import { createMetaMaskController } from "../metamaskServer";
+
+type Attendant = typeof attendantTable.$inferSelect;
 const adminWallet = ethers.Wallet.createRandom();
 let server: FastifyInstance;
 
@@ -18,47 +27,36 @@ let attendant2: Attendant;
 
 test.beforeEach(async () => {
   // add admin wallet to database
-  admin = await prisma.user.create({
-    data: {
-      walletAddress: adminWallet.address,
-      role: "ADMIN",
-    },
-  });
+  const adminResult = await db.insert(user).values({
+    walletAddress: adminWallet.address,
+    role: "ADMIN",
+  }).returning();
+  admin = adminResult[0];
 
   // add attendant wallet to database
-  attendant = await prisma.attendant.create({
-    data: {
-      firstName: "Test",
-      lastName: "Attendant",
-      uid: "1",
-      adminUser: {
-        connect: {
-          id: admin.id,
-        },
-      },
-    },
-  });
+  const attendantResult = await db.insert(attendantTable).values({
+    firstName: "Test",
+    lastName: "Attendant",
+    uid: "1",
+    admin: admin.id,
+  }).returning();
+  attendant = attendantResult[0];
 
   // create attendant
-  attendant2 = await prisma.attendant.create({
-    data: {
-      firstName: "Test2",
-      lastName: "Attendant2",
-      uid: "2",
-      adminUser: {
-        connect: {
-          id: admin.id,
-        },
-      },
-    },
-  });
+  const attendant2Result = await db.insert(attendantTable).values({
+    firstName: "Test2",
+    lastName: "Attendant2",
+    uid: "2",
+    admin: admin.id,
+  }).returning();
+  attendant2 = attendant2Result[0];
 });
 
 test.afterEach(async () => {
-  await prisma.attendanceRecord.deleteMany();
-  await prisma.attendanceRoom.deleteMany();
-  await prisma.attendant.deleteMany();
-  await prisma.user.deleteMany();
+  await db.delete(attendanceRecordTable);
+  await db.delete(attendanceRoomTable);
+  await db.delete(attendantTable);
+  await db.delete(user);
 
   await server?.close();
 });
@@ -70,14 +68,13 @@ test.describe("room", () => {
     response.controller.setWallet(adminWallet);
     await signInWithWallet(page);
 
-    const room = await prisma.attendanceRoom.create({
-      data: {
-        alias: "Test Room",
-        createdBy: admin.id,
-      },
-    });
+    const roomResult = await db.insert(attendanceRoomTable).values({
+      alias: "Test Room",
+      createdBy: admin.id,
+    }).returning();
+    
     return {
-      room,
+      room: roomResult[0],
       controller: response.controller,
     };
   }
@@ -122,7 +119,7 @@ test.describe("room", () => {
     await expect(takeAttendanceButton).toBeVisible();
 
     // select first attendant
-    await attendantSelect.selectOption(attendant.id.toString());
+    await attendantSelect.selectOption(attendantTable.id.toString());
     // check take attendance button
     await takeAttendanceButton.click();
 
@@ -138,17 +135,14 @@ test.describe("room", () => {
     context,
   }) => {
     // update attendant 1 with wallet address
-    await prisma.attendant.update({
-      where: { id: attendant.id },
-      data: { walletAddress: attendantWallet.address },
-    });
+    await db.update(attendantTable).set({
+      walletAddress: attendantWallet.address
+    }).where(eq(attendantTable.id, attendantTable.id));
 
     const { room, controller } = await signInAndCreateRoom(page);
-    await prisma.attendanceRecord.create({
-      data: {
-        attendantId: attendant.id,
-        attendanceRoomId: room.id,
-      },
+    await db.insert(attendanceRecordTable).values({
+      attendantId: attendantTable.id,
+      attendanceRoomId: room.id,
     });
 
     // go to the room page
@@ -185,10 +179,9 @@ test.describe("room", () => {
     context,
   }) => {
     // update attendant 1 with wallet address
-    await prisma.attendant.update({
-      where: { id: attendant.id },
-      data: { walletAddress: attendantWallet.address },
-    });
+    await db.update(attendantTable).set({
+      walletAddress: attendantWallet.address
+    }).where(eq(attendantTable.id, attendantTable.id));
 
     const { room, controller } = await signInAndCreateRoom(page);
 
@@ -233,27 +226,23 @@ test.describe("room", () => {
     context,
   }) => {
     // update attendant 1 with wallet address
-    await prisma.attendant.update({
-      where: { id: attendant.id },
-      data: { walletAddress: attendantWallet.address },
-    });
+    await db.update(attendantTable).set({
+      walletAddress: attendantWallet.address
+    }).where(eq(attendantTable.id, attendantTable.id));
 
     // Create first room and take attendance
     const { room: room1, controller } = await signInAndCreateRoom(page);
-    await prisma.attendanceRecord.create({
-      data: {
-        attendantId: attendant.id,
-        attendanceRoomId: room1.id,
-      },
+    await db.insert(attendanceRecordTable).values({
+      attendantId: attendantTable.id,
+      attendanceRoomId: room1.id,
     });
 
     // Create second room
-    const room2 = await prisma.attendanceRoom.create({
-      data: {
-        alias: "Test Room 2",
-        createdBy: admin.id,
-      },
-    });
+    const room2Result = await db.insert(attendanceRoomTable).values({
+      alias: "Test Room 2",
+      createdBy: admin.id,
+    }).returning();
+    const room2 = room2Result[0];
 
     // Go to the second room page
     await page.goto(`/attendance/${room2.id}`);
@@ -289,11 +278,9 @@ test.describe("room", () => {
     await expect(attendanceTakenMessage).toBeVisible();
 
     // Verify that attendance records exist in both rooms
-    const attendanceRecords = await prisma.attendanceRecord.findMany({
-      where: {
-        attendantId: attendant.id,
-      },
-    });
+    const attendanceRecords = await db.select().from(attendanceRecord).where(
+      eq(attendanceRecordTable.attendantId, attendantTable.id)
+    );
     
     expect(attendanceRecords.length).toBe(2);
     expect(attendanceRecords.some(record => record.attendanceRoomId === room1.id)).toBeTruthy();
