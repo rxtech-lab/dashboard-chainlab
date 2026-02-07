@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { user, attendanceRoom } from "@/lib/db/schema";
+import { user as userTable, attendanceRoom as attendanceRoomTable } from "@/lib/db/schema";
 import { expect, test } from "@playwright/test";
 import { ethers } from "ethers";
 import { FastifyInstance } from "fastify";
@@ -14,22 +14,22 @@ let admin: User;
 
 test.beforeEach(async () => {
   // add admin wallet to database
-  const result = await db.insert(user).values({
+  const result = await db.insert(userTable).values({
     walletAddress: adminWallet.address,
     role: "ADMIN",
   }).returning();
   admin = result[0];
 
   // add attendant wallet to database
-  await db.insert(user).values({
+  await db.insert(userTable).values({
     walletAddress: attendantWallet.address,
     role: "USER",
   });
 });
 
 test.afterEach(async () => {
-  await db.delete(attendanceRoom);
-  await db.delete(user);
+  await db.delete(attendanceRoomTable);
+  await db.delete(userTable);
 
   await server.close();
 });
@@ -114,7 +114,7 @@ test.describe("room", () => {
 test.describe("pagination", () => {
   test("create a room", async ({ page }) => {
     // write 21 rooms in the database
-    await db.insert(attendanceRoom).values(
+    await db.insert(attendanceRoomTable).values(
       Array.from({ length: 21 }, (_, i) => ({
         alias: `Test Room ${i + 1}`,
         createdBy: admin.id,

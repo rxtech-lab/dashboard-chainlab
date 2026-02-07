@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { user } from "@/lib/db/schema";
+import { user as userTable } from "@/lib/db/schema";
 import { expect, test } from "@playwright/test";
 import { ethers } from "ethers";
 import { FastifyInstance } from "fastify";
@@ -14,20 +14,20 @@ const [attendantWallet] = [ethers.Wallet.createRandom()];
 
 test.beforeEach(async () => {
   // add admin wallet to database
-  await db.insert(user).values({
+  await db.insert(userTable).values({
     walletAddress: adminWallet.address,
     role: "ADMIN",
   });
 
   // add attendant wallet to database
-  await db.insert(user).values({
+  await db.insert(userTable).values({
     walletAddress: attendantWallet.address,
     role: "USER",
   });
 });
 
 test.afterEach(async () => {
-  await db.delete(user);
+  await db.delete(userTable);
   await server.close();
 });
 

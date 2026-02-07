@@ -137,11 +137,11 @@ test.describe("room", () => {
     // update attendant 1 with wallet address
     await db.update(attendantTable).set({
       walletAddress: attendantWallet.address
-    }).where(eq(attendantTable.id, attendantTable.id));
+    }).where(eq(attendantTable.id, attendant.id));
 
     const { room, controller } = await signInAndCreateRoom(page);
     await db.insert(attendanceRecordTable).values({
-      attendantId: attendantTable.id,
+      attendantId: attendant.id,
       attendanceRoomId: room.id,
     });
 
@@ -181,7 +181,7 @@ test.describe("room", () => {
     // update attendant 1 with wallet address
     await db.update(attendantTable).set({
       walletAddress: attendantWallet.address
-    }).where(eq(attendantTable.id, attendantTable.id));
+    }).where(eq(attendantTable.id, attendant.id));
 
     const { room, controller } = await signInAndCreateRoom(page);
 
@@ -228,12 +228,12 @@ test.describe("room", () => {
     // update attendant 1 with wallet address
     await db.update(attendantTable).set({
       walletAddress: attendantWallet.address
-    }).where(eq(attendantTable.id, attendantTable.id));
+    }).where(eq(attendantTable.id, attendant.id));
 
     // Create first room and take attendance
     const { room: room1, controller } = await signInAndCreateRoom(page);
     await db.insert(attendanceRecordTable).values({
-      attendantId: attendantTable.id,
+      attendantId: attendant.id,
       attendanceRoomId: room1.id,
     });
 
@@ -278,8 +278,8 @@ test.describe("room", () => {
     await expect(attendanceTakenMessage).toBeVisible();
 
     // Verify that attendance records exist in both rooms
-    const attendanceRecords = await db.select().from(attendanceRecord).where(
-      eq(attendanceRecordTable.attendantId, attendantTable.id)
+    const attendanceRecords = await db.select().from(attendanceRecordTable).where(
+      eq(attendanceRecordTable.attendantId, attendant.id)
     );
     
     expect(attendanceRecords.length).toBe(2);
