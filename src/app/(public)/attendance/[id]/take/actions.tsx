@@ -10,7 +10,7 @@ import { handleDatabaseError } from "@/lib/db/error";
 import { verifyMessage } from "ethers";
 import { cookies } from "next/headers";
 import { SessionResponse } from "web3-connect-react";
-import { eq, and, gte } from "drizzle-orm";
+import { eq, and, gte, isNull } from "drizzle-orm";
 
 interface SignInAsAttendantUser {
   firstName: string;
@@ -274,7 +274,7 @@ export async function takeAttendance(
         .where(
           and(
             eq(attendant.id, user.id),
-            eq(attendant.walletAddress, null)
+            isNull(attendant.walletAddress)
           )
         )
         .returning();

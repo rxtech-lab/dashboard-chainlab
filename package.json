@@ -3,13 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "generate": "prisma generate",
-    "postinstall": "prisma generate",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
     "dev": "next dev --turbopack",
     "build": "next build",
     "build:test": "NODE_ENV=test next build",
-    "migrate:test": "dotenv -e .env.test -- prisma migrate dev",
-    "migrate:dev": "dotenv -e .env.local -- prisma migrate dev",
     "start": "next start",
     "lint": "next lint",
     "test:e2e": "playwright test"

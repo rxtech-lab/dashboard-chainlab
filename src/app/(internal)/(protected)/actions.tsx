@@ -112,9 +112,10 @@ export async function updateAttendanceRoom(
           eq(attendanceRoom.id, id),
           eq(attendanceRoom.createdBy, session.id)
         )
-      );
+      )
+      .returning({ id: attendanceRoom.id });
 
-    if (result.rowCount === 0) {
+    if (result.length === 0) {
       return { success: false, error: "Room not found or unauthorized" };
     }
 
@@ -152,9 +153,10 @@ export async function deleteAttendanceRoom(
           eq(attendanceRoom.id, id),
           eq(attendanceRoom.createdBy, session.id)
         )
-      );
+      )
+      .returning({ id: attendanceRoom.id });
 
-    if (result.rowCount === 0) {
+    if (result.length === 0) {
       return { success: false, error: "Room not found or unauthorized" };
     }
 
@@ -195,9 +197,10 @@ export async function updateAttendanceRoomName(
           eq(attendanceRoom.id, id),
           eq(attendanceRoom.createdBy, session.id)
         )
-      );
+      )
+      .returning({ id: attendanceRoom.id });
 
-    if (result.rowCount === 0) {
+    if (result.length === 0) {
       return { success: false, error: "Room not found or unauthorized" };
     }
 

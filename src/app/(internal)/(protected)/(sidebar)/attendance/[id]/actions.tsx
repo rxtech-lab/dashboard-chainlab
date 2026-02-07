@@ -95,7 +95,7 @@ export async function getAttendanceRecordByRoomId(id: number) {
 
     return { count, data };
   } catch (error) {
-    return { error: handlePrismaError(error) };
+    return { error: handleDatabaseError(error) };
   }
 }
 
