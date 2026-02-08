@@ -12,6 +12,8 @@ interface RoomActionsProps {
   handleToggle: () => void;
   isLoading: boolean;
   isDisabled: boolean;
+  semesterId?: number | null;
+  classId?: number | null;
 }
 
 export default function RoomActions({
@@ -20,6 +22,8 @@ export default function RoomActions({
   isOpen,
   handleToggle,
   isLoading,
+  semesterId,
+  classId,
 }: RoomActionsProps) {
   return (
     <div className="flex items-center gap-4">
@@ -36,7 +40,12 @@ export default function RoomActions({
           <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
         </label>
       </div>
-      <UpdateRoomDialog roomId={roomId} currentAlias={roomAlias} />
+      <UpdateRoomDialog
+        roomId={roomId}
+        currentAlias={roomAlias}
+        currentSemesterId={semesterId}
+        currentClassId={classId}
+      />
     </div>
   );
 }

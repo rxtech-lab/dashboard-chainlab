@@ -3,7 +3,7 @@
 import { FormValues } from "@/components/pages/createRoom.type";
 import { isAuthenticated } from "@/lib/auth";
 import { db } from "@/lib/database";
-import { attendanceRoom } from "@/lib/schema";
+import { attendanceRoom, semester, classTable } from "@/lib/schema";
 import { handleDbError } from "@/lib/db.error";
 import { cookies } from "next/headers";
 import { eq, and, desc, count } from "drizzle-orm";
@@ -20,7 +20,7 @@ type ActionResponse = {
  * @returns The created room.
  */
 export async function createAttendanceRoom(
-  data: FormValues
+  data: FormValues,
 ): Promise<ActionResponse> {
   try {
     const cookie = await cookies();
@@ -35,6 +35,8 @@ export async function createAttendanceRoom(
     await db.insert(attendanceRoom).values({
       alias: data.alias,
       createdBy: session.id,
+      semesterId: data.semesterId ?? null,
+      classId: data.classId ?? null,
     });
 
     return { success: true };
@@ -65,6 +67,14 @@ export async function getAttendanceRooms(page: number, limit: number) {
         orderBy: [desc(attendanceRoom.createdAt), desc(attendanceRoom.id)],
         offset,
         limit,
+        with: {
+          semester: {
+            columns: { id: true, name: true },
+          },
+          classItem: {
+            columns: { id: true, name: true },
+          },
+        },
       }),
       db
         .select({ count: count() })
@@ -92,7 +102,7 @@ export async function getAttendanceRooms(page: number, limit: number) {
  */
 export async function updateAttendanceRoom(
   id: number,
-  data: { isOpen: boolean }
+  data: { isOpen: boolean },
 ): Promise<ActionResponse> {
   try {
     const cookie = await cookies();
@@ -110,8 +120,8 @@ export async function updateAttendanceRoom(
       .where(
         and(
           eq(attendanceRoom.id, id),
-          eq(attendanceRoom.createdBy, session.id)
-        )
+          eq(attendanceRoom.createdBy, session.id),
+        ),
       );
 
     if (result.rowsAffected === 0) {
@@ -133,7 +143,7 @@ export async function updateAttendanceRoom(
  * @returns The deleted attendance room.
  */
 export async function deleteAttendanceRoom(
-  id: number
+  id: number,
 ): Promise<ActionResponse> {
   try {
     const cookie = await cookies();
@@ -150,8 +160,8 @@ export async function deleteAttendanceRoom(
       .where(
         and(
           eq(attendanceRoom.id, id),
-          eq(attendanceRoom.createdBy, session.id)
-        )
+          eq(attendanceRoom.createdBy, session.id),
+        ),
       );
 
     if (result.rowsAffected === 0) {
@@ -173,9 +183,50 @@ export async function deleteAttendanceRoom(
  * @param data The data to update the attendance room.
  * @returns The updated attendance room.
  */
+export async function getAdminSemesters() {
+  try {
+    const cookie = await cookies();
+    const { error, session } = await isAuthenticated(cookie);
+    if (error) throw new Error(error);
+    if (!session) throw new Error("Unauthorized");
+
+    const semesters = await db.query.semester.findMany({
+      where: eq(semester.createdBy, session.id),
+      columns: { id: true, name: true },
+      orderBy: [desc(semester.createdAt)],
+    });
+
+    return { data: semesters };
+  } catch (error) {
+    throw new Error(handleDbError(error));
+  }
+}
+
+export async function getAdminClasses(semesterId: number) {
+  try {
+    const cookie = await cookies();
+    const { error, session } = await isAuthenticated(cookie);
+    if (error) throw new Error(error);
+    if (!session) throw new Error("Unauthorized");
+
+    const classes = await db.query.classTable.findMany({
+      where: and(
+        eq(classTable.semesterId, semesterId),
+        eq(classTable.createdBy, session.id),
+      ),
+      columns: { id: true, name: true },
+      orderBy: [desc(classTable.createdAt)],
+    });
+
+    return { data: classes };
+  } catch (error) {
+    throw new Error(handleDbError(error));
+  }
+}
+
 export async function updateAttendanceRoomName(
   id: number,
-  data: { alias: string }
+  data: { alias: string; semesterId?: number; classId?: number },
 ): Promise<ActionResponse> {
   try {
     const cookie = await cookies();
@@ -189,12 +240,16 @@ export async function updateAttendanceRoomName(
 
     const result = await db
       .update(attendanceRoom)
-      .set({ alias: data.alias })
+      .set({
+        alias: data.alias,
+        semesterId: data.semesterId ?? null,
+        classId: data.classId ?? null,
+      })
       .where(
         and(
           eq(attendanceRoom.id, id),
-          eq(attendanceRoom.createdBy, session.id)
-        )
+          eq(attendanceRoom.createdBy, session.id),
+        ),
       );
 
     if (result.rowsAffected === 0) {

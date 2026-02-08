@@ -14,20 +14,30 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Input } from "../ui/input";
-import { updateAttendanceRoomName } from "@/app/(internal)/(protected)/actions";
+import {
+  updateAttendanceRoomName,
+  getAdminSemesters,
+  getAdminClasses,
+} from "@/app/(internal)/(protected)/actions";
 import { useToast } from "@/hooks/use-toast";
 import { formSchema, FormValues } from "./createRoom.type";
 import { useRouter } from "next/navigation";
 import { Pencil } from "lucide-react";
+import useSWR from "swr";
+import { useEffect } from "react";
 
 interface UpdateRoomDialogProps {
   roomId: number;
   currentAlias: string;
+  currentSemesterId?: number | null;
+  currentClassId?: number | null;
 }
 
 export default function UpdateRoomDialog({
   roomId,
   currentAlias,
+  currentSemesterId = null,
+  currentClassId = null,
 }: UpdateRoomDialogProps) {
   const [open, setOpen] = useState(false);
 
@@ -35,6 +45,8 @@ export default function UpdateRoomDialog({
     resolver: zodResolver(formSchema as any),
     defaultValues: {
       alias: currentAlias,
+      semesterId: currentSemesterId ?? undefined,
+      classId: currentClassId ?? undefined,
     },
   });
 
@@ -42,13 +54,42 @@ export default function UpdateRoomDialog({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
+  const { data: semestersData } = useSWR(
+    open ? "/api/semesters" : null,
+    async () => {
+      const res = await getAdminSemesters();
+      return res.data;
+    },
+  );
+
+  const semesters = semestersData ?? [];
+
+  const selectedSemesterId = form.watch("semesterId");
+
+  const { data: classesData } = useSWR(
+    selectedSemesterId ? `/api/classes/${selectedSemesterId}` : null,
+    async () => {
+      const res = await getAdminClasses(selectedSemesterId!);
+      return res.data;
+    },
+  );
+
+  const classes = classesData ?? [];
+
+  // Clear classId when semester changes
+  useEffect(() => {
+    if (!selectedSemesterId) {
+      form.setValue("classId", undefined);
+    }
+  }, [selectedSemesterId, form]);
+
   const onSubmit = async (data: FormValues) => {
     setLoading(true);
     const response = await updateAttendanceRoomName(roomId, data).finally(
       () => {
         router.refresh();
         setLoading(false);
-      }
+      },
     );
     if (response.error) {
       toast.toast({
@@ -62,7 +103,11 @@ export default function UpdateRoomDialog({
         description: "Room updated successfully",
         variant: "success",
       });
-      form.reset({ alias: data.alias });
+      form.reset({
+        alias: data.alias,
+        semesterId: data.semesterId,
+        classId: data.classId,
+      });
       setOpen(false);
     }
   };
@@ -80,7 +125,7 @@ export default function UpdateRoomDialog({
       <NativeModal
         openModal={open}
         closeModal={() => setOpen(false)}
-        className="rounded-2xl w-[500px]"
+        className="rounded-2xl w-125!"
       >
         <div className="space-y-6 p-6">
           <div className="space-y-2">
@@ -107,6 +152,116 @@ export default function UpdateRoomDialog({
                         data-testid="update-room-input"
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="semesterId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Semester (optional)</FormLabel>
+                    <FormControl>
+                      <select
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={field.value?.toString() ?? ""}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value
+                              ? Number.parseInt(e.target.value)
+                              : undefined,
+                          )
+                        }
+                        disabled={semesters.length === 0}
+                        data-testid="semester-select"
+                      >
+                        <option value="">
+                          {semesters.length === 0
+                            ? "No semesters available"
+                            : "Select semester"}
+                        </option>
+                        {semesters.map((s) => (
+                          <option key={s.id} value={s.id.toString()}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
+                    {semesters.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Create semesters in the{" "}
+                        <a
+                          href="/semesters"
+                          className="underline hover:text-foreground"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            router.push("/semesters");
+                            setOpen(false);
+                          }}
+                        >
+                          Semesters page
+                        </a>{" "}
+                        first
+                      </p>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="classId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Class (optional)</FormLabel>
+                    <FormControl>
+                      <select
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={field.value?.toString() ?? ""}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value
+                              ? Number.parseInt(e.target.value)
+                              : undefined,
+                          )
+                        }
+                        disabled={!selectedSemesterId || classes.length === 0}
+                        data-testid="class-select"
+                      >
+                        <option value="">
+                          {!selectedSemesterId
+                            ? "Select a semester first"
+                            : classes.length === 0
+                              ? "No classes available"
+                              : "Select class"}
+                        </option>
+                        {classes.map((c) => (
+                          <option key={c.id} value={c.id.toString()}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
+                    {selectedSemesterId && classes.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Create classes in the{" "}
+                        <a
+                          href="/classes"
+                          className="underline hover:text-foreground"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            router.push("/classes");
+                            setOpen(false);
+                          }}
+                        >
+                          Classes page
+                        </a>{" "}
+                        first
+                      </p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

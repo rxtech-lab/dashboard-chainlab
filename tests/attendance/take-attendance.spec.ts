@@ -4,6 +4,9 @@ import {
   attendant,
   attendanceRoom,
   attendanceRecord,
+  studentClass,
+  classTable,
+  semester,
 } from "@/lib/schema";
 import { expect, Page, test } from "@playwright/test";
 import { ethers } from "ethers";
@@ -60,9 +63,12 @@ test.beforeEach(async () => {
 });
 
 test.afterEach(async () => {
+  await db.delete(studentClass);
   await db.delete(attendanceRecord);
   await db.delete(attendanceRoom);
+  await db.delete(classTable);
   await db.delete(attendant);
+  await db.delete(semester);
   await db.delete(user);
 
   await server?.close();
