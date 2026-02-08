@@ -1,10 +1,17 @@
-import { prisma } from "@/lib/database";
+import { db } from "@/lib/database";
+import {
+  user,
+  attendant,
+  attendanceRoom,
+  attendanceRecord,
+} from "@/lib/schema";
 import { expect, Page, test } from "@playwright/test";
 import { ethers } from "ethers";
 import { FastifyInstance } from "fastify";
 import { signInWithWallet } from "../helpers/signInHelper";
-import { User, Attendant } from "@prisma/client";
+import { eq } from "drizzle-orm";
 import { createMetaMaskController } from "../metamaskServer";
+
 const adminWallet = ethers.Wallet.createRandom();
 let server: FastifyInstance;
 
@@ -12,53 +19,51 @@ const [attendantWallet, attendantWallet2] = [
   ethers.Wallet.createRandom(),
   ethers.Wallet.createRandom(),
 ];
-let admin: User;
-let attendant: Attendant;
-let attendant2: Attendant;
+let admin: typeof user.$inferSelect;
+let attendant1: typeof attendant.$inferSelect;
+let attendant2: typeof attendant.$inferSelect;
 
 test.beforeEach(async () => {
   // add admin wallet to database
-  admin = await prisma.user.create({
-    data: {
+  const [insertedAdmin] = await db
+    .insert(user)
+    .values({
       walletAddress: adminWallet.address,
       role: "ADMIN",
-    },
-  });
+    })
+    .returning();
+  admin = insertedAdmin;
 
-  // add attendant wallet to database
-  attendant = await prisma.attendant.create({
-    data: {
+  // add attendant to database
+  const [insertedAttendant1] = await db
+    .insert(attendant)
+    .values({
       firstName: "Test",
       lastName: "Attendant",
       uid: "1",
-      adminUser: {
-        connect: {
-          id: admin.id,
-        },
-      },
-    },
-  });
+      admin: admin.id,
+    })
+    .returning();
+  attendant1 = insertedAttendant1;
 
   // create attendant
-  attendant2 = await prisma.attendant.create({
-    data: {
+  const [insertedAttendant2] = await db
+    .insert(attendant)
+    .values({
       firstName: "Test2",
       lastName: "Attendant2",
       uid: "2",
-      adminUser: {
-        connect: {
-          id: admin.id,
-        },
-      },
-    },
-  });
+      admin: admin.id,
+    })
+    .returning();
+  attendant2 = insertedAttendant2;
 });
 
 test.afterEach(async () => {
-  await prisma.attendanceRecord.deleteMany();
-  await prisma.attendanceRoom.deleteMany();
-  await prisma.attendant.deleteMany();
-  await prisma.user.deleteMany();
+  await db.delete(attendanceRecord);
+  await db.delete(attendanceRoom);
+  await db.delete(attendant);
+  await db.delete(user);
 
   await server?.close();
 });
@@ -70,12 +75,13 @@ test.describe("room", () => {
     response.controller.setWallet(adminWallet);
     await signInWithWallet(page);
 
-    const room = await prisma.attendanceRoom.create({
-      data: {
+    const [room] = await db
+      .insert(attendanceRoom)
+      .values({
         alias: "Test Room",
         createdBy: admin.id,
-      },
-    });
+      })
+      .returning();
     return {
       room,
       controller: response.controller,
@@ -122,7 +128,7 @@ test.describe("room", () => {
     await expect(takeAttendanceButton).toBeVisible();
 
     // select first attendant
-    await attendantSelect.selectOption(attendant.id.toString());
+    await attendantSelect.selectOption(attendant1.id.toString());
     // check take attendance button
     await takeAttendanceButton.click();
 
@@ -138,17 +144,15 @@ test.describe("room", () => {
     context,
   }) => {
     // update attendant 1 with wallet address
-    await prisma.attendant.update({
-      where: { id: attendant.id },
-      data: { walletAddress: attendantWallet.address },
-    });
+    await db
+      .update(attendant)
+      .set({ walletAddress: attendantWallet.address })
+      .where(eq(attendant.id, attendant1.id));
 
     const { room, controller } = await signInAndCreateRoom(page);
-    await prisma.attendanceRecord.create({
-      data: {
-        attendantId: attendant.id,
-        attendanceRoomId: room.id,
-      },
+    await db.insert(attendanceRecord).values({
+      attendantId: attendant1.id,
+      attendanceRoomId: room.id,
     });
 
     // go to the room page
@@ -185,10 +189,10 @@ test.describe("room", () => {
     context,
   }) => {
     // update attendant 1 with wallet address
-    await prisma.attendant.update({
-      where: { id: attendant.id },
-      data: { walletAddress: attendantWallet.address },
-    });
+    await db
+      .update(attendant)
+      .set({ walletAddress: attendantWallet.address })
+      .where(eq(attendant.id, attendant1.id));
 
     const { room, controller } = await signInAndCreateRoom(page);
 
@@ -233,27 +237,26 @@ test.describe("room", () => {
     context,
   }) => {
     // update attendant 1 with wallet address
-    await prisma.attendant.update({
-      where: { id: attendant.id },
-      data: { walletAddress: attendantWallet.address },
-    });
+    await db
+      .update(attendant)
+      .set({ walletAddress: attendantWallet.address })
+      .where(eq(attendant.id, attendant1.id));
 
     // Create first room and take attendance
     const { room: room1, controller } = await signInAndCreateRoom(page);
-    await prisma.attendanceRecord.create({
-      data: {
-        attendantId: attendant.id,
-        attendanceRoomId: room1.id,
-      },
+    await db.insert(attendanceRecord).values({
+      attendantId: attendant1.id,
+      attendanceRoomId: room1.id,
     });
 
     // Create second room
-    const room2 = await prisma.attendanceRoom.create({
-      data: {
+    const [room2] = await db
+      .insert(attendanceRoom)
+      .values({
         alias: "Test Room 2",
         createdBy: admin.id,
-      },
-    });
+      })
+      .returning();
 
     // Go to the second room page
     await page.goto(`/attendance/${room2.id}`);
@@ -285,18 +288,22 @@ test.describe("room", () => {
     await takeAttendanceButton.click();
 
     // Verify attendance was taken successfully
-    const attendanceTakenMessage = newPage.getByTestId("attendance-taken-message");
+    const attendanceTakenMessage = newPage.getByTestId(
+      "attendance-taken-message"
+    );
     await expect(attendanceTakenMessage).toBeVisible();
 
     // Verify that attendance records exist in both rooms
-    const attendanceRecords = await prisma.attendanceRecord.findMany({
-      where: {
-        attendantId: attendant.id,
-      },
+    const records = await db.query.attendanceRecord.findMany({
+      where: eq(attendanceRecord.attendantId, attendant1.id),
     });
-    
-    expect(attendanceRecords.length).toBe(2);
-    expect(attendanceRecords.some(record => record.attendanceRoomId === room1.id)).toBeTruthy();
-    expect(attendanceRecords.some(record => record.attendanceRoomId === room2.id)).toBeTruthy();
+
+    expect(records.length).toBe(2);
+    expect(
+      records.some((record) => record.attendanceRoomId === room1.id)
+    ).toBeTruthy();
+    expect(
+      records.some((record) => record.attendanceRoomId === room2.id)
+    ).toBeTruthy();
   });
 });

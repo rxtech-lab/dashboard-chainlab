@@ -10,7 +10,7 @@ import {
   InAppWalletProvider,
   MetaMaskMockProvider,
   MetaMaskProvider,
-  SessionResponse,
+  type SessionResponse,
   WalletConnectProvider,
   WalletContextProvider,
 } from "web3-connect-react";
@@ -37,18 +37,21 @@ export function Providers({ children, session, mode }: ProvidersProps) {
           MetaMaskProvider,
           InAppWalletProvider,
           WalletConnectProvider({
+            // biome-ignore lint/style/noNonNullAssertion: <explanation>
             projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID!,
             chains: [ChainConfig],
             ethersConfig: {
               metadata: {
-                name: "",
-                description: "",
-                url: "",
+                name: "ChainLab App",
+                description: "ChainLab Attendance Management",
+                url: process.env.NEXT_PUBLIC_URL ?? "",
                 icons: [],
               },
             },
           }),
-          MetaMaskMockProvider,
+          ...(process.env.NEXT_PUBLIC_IS_TEST === "true"
+            ? [MetaMaskMockProvider]
+            : []),
         ]}
         onSignedOut={async () => {
           if (mode === "internal") {
@@ -58,10 +61,12 @@ export function Providers({ children, session, mode }: ProvidersProps) {
           }
           router.refresh();
         }}
-        environment={{
-          env: "e2e",
-          endpoint: `http://0.0.0.0:4000?visibility=${mode}`,
-        }}
+        {...(process.env.NEXT_PUBLIC_IS_TEST === "true" && {
+          environment: {
+            env: "e2e" as const,
+            endpoint: `http://0.0.0.0:4000?visibility=${mode}`,
+          },
+        })}
       >
         {children}
       </WalletContextProvider>

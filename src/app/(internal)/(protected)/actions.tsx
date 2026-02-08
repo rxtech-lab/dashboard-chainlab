@@ -2,9 +2,11 @@
 
 import { FormValues } from "@/components/pages/createRoom.type";
 import { isAuthenticated } from "@/lib/auth";
-import { prisma } from "@/lib/database";
-import { handlePrismaError } from "@/lib/prisma.error";
+import { db } from "@/lib/database";
+import { attendanceRoom } from "@/lib/schema";
+import { handleDbError } from "@/lib/db.error";
 import { cookies } from "next/headers";
+import { eq, and, desc, count } from "drizzle-orm";
 
 // Custom error type for better error handling
 type ActionResponse = {
@@ -30,18 +32,16 @@ export async function createAttendanceRoom(
       return { success: false, error: "Unauthorized" };
     }
 
-    await prisma.attendanceRoom.create({
-      data: {
-        ...data,
-        createdBy: session.id,
-      },
+    await db.insert(attendanceRoom).values({
+      alias: data.alias,
+      createdBy: session.id,
     });
 
     return { success: true };
   } catch (error) {
     return {
       success: false,
-      error: handlePrismaError(error),
+      error: handleDbError(error),
     };
   }
 }
@@ -57,26 +57,22 @@ export async function getAttendanceRooms(page: number, limit: number) {
       throw new Error("Unauthorized");
     }
 
-    const skip = (page - 1) * limit;
+    const offset = (page - 1) * limit;
 
-    const [rooms, totalCount] = await Promise.all([
-      prisma.attendanceRoom.findMany({
-        where: {
-          createdBy: session.id,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        skip,
-        take: limit,
+    const [rooms, totalCountResult] = await Promise.all([
+      db.query.attendanceRoom.findMany({
+        where: eq(attendanceRoom.createdBy, session.id),
+        orderBy: [desc(attendanceRoom.createdAt), desc(attendanceRoom.id)],
+        offset,
+        limit,
       }),
-      prisma.attendanceRoom.count({
-        where: {
-          createdBy: session.id,
-        },
-      }),
+      db
+        .select({ count: count() })
+        .from(attendanceRoom)
+        .where(eq(attendanceRoom.createdBy, session.id)),
     ]);
 
+    const totalCount = totalCountResult[0]?.count ?? 0;
     const totalPages = Math.ceil(totalCount / limit);
 
     return {
@@ -84,7 +80,7 @@ export async function getAttendanceRooms(page: number, limit: number) {
       totalPages,
     };
   } catch (error) {
-    throw new Error(handlePrismaError(error));
+    throw new Error(handleDbError(error));
   }
 }
 
@@ -108,17 +104,17 @@ export async function updateAttendanceRoom(
       return { success: false, error: "Unauthorized" };
     }
 
-    const result = await prisma.attendanceRoom.updateMany({
-      where: {
-        id,
-        createdBy: session.id,
-      },
-      data: {
-        isOpen: data.isOpen,
-      },
-    });
+    const result = await db
+      .update(attendanceRoom)
+      .set({ isOpen: data.isOpen })
+      .where(
+        and(
+          eq(attendanceRoom.id, id),
+          eq(attendanceRoom.createdBy, session.id)
+        )
+      );
 
-    if (result.count === 0) {
+    if (result.rowsAffected === 0) {
       return { success: false, error: "Room not found or unauthorized" };
     }
 
@@ -126,7 +122,7 @@ export async function updateAttendanceRoom(
   } catch (error) {
     return {
       success: false,
-      error: handlePrismaError(error),
+      error: handleDbError(error),
     };
   }
 }
@@ -149,14 +145,16 @@ export async function deleteAttendanceRoom(
       return { success: false, error: "Unauthorized" };
     }
 
-    const result = await prisma.attendanceRoom.deleteMany({
-      where: {
-        id,
-        createdBy: session.id,
-      },
-    });
+    const result = await db
+      .delete(attendanceRoom)
+      .where(
+        and(
+          eq(attendanceRoom.id, id),
+          eq(attendanceRoom.createdBy, session.id)
+        )
+      );
 
-    if (result.count === 0) {
+    if (result.rowsAffected === 0) {
       return { success: false, error: "Room not found or unauthorized" };
     }
 
@@ -164,7 +162,7 @@ export async function deleteAttendanceRoom(
   } catch (error) {
     return {
       success: false,
-      error: handlePrismaError(error),
+      error: handleDbError(error),
     };
   }
 }
@@ -189,17 +187,17 @@ export async function updateAttendanceRoomName(
       return { success: false, error: "Unauthorized" };
     }
 
-    const result = await prisma.attendanceRoom.updateMany({
-      where: {
-        id,
-        createdBy: session.id,
-      },
-      data: {
-        alias: data.alias,
-      },
-    });
+    const result = await db
+      .update(attendanceRoom)
+      .set({ alias: data.alias })
+      .where(
+        and(
+          eq(attendanceRoom.id, id),
+          eq(attendanceRoom.createdBy, session.id)
+        )
+      );
 
-    if (result.count === 0) {
+    if (result.rowsAffected === 0) {
       return { success: false, error: "Room not found or unauthorized" };
     }
 
@@ -207,7 +205,7 @@ export async function updateAttendanceRoomName(
   } catch (error) {
     return {
       success: false,
-      error: handlePrismaError(error),
+      error: handleDbError(error),
     };
   }
 }

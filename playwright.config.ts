@@ -14,6 +14,7 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   /* Add global setup */
   globalSetup: require.resolve("./tests/global-setup.ts"),
+  globalTeardown: require.resolve("./tests/global-teardown.ts"),
 
   testDir: "./tests",
   /* Run tests in files in parallel */
@@ -44,7 +45,7 @@ export default defineConfig({
   ],
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: "pnpm start",
+    command: "bun start",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
     stdout: "pipe",

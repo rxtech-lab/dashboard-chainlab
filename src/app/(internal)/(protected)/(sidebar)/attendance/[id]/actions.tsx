@@ -4,10 +4,12 @@ import { Config } from "@/config/config";
 import { getAttendanceNonceKey } from "@/lib/attendance.constants";
 import { isAuthenticated } from "@/lib/auth";
 import redis from "@/lib/redis";
-import { prisma } from "@/lib/database";
-import { handlePrismaError } from "@/lib/prisma.error";
+import { db } from "@/lib/database";
+import { attendanceRoom, attendanceRecord, attendant } from "@/lib/schema";
+import { handleDbError } from "@/lib/db.error";
 import { cookies } from "next/headers";
 import { v4 as uuidv4 } from "uuid";
+import { eq, and, gte, desc, count } from "drizzle-orm";
 
 export async function getAttendance(id: number) {
   try {
@@ -18,11 +20,11 @@ export async function getAttendance(id: number) {
       return { error: error };
     }
 
-    const data = await prisma.attendanceRoom.findUnique({
-      where: {
-        id: id,
-        createdBy: session!.id,
-      },
+    const data = await db.query.attendanceRoom.findFirst({
+      where: and(
+        eq(attendanceRoom.id, id),
+        eq(attendanceRoom.createdBy, session!.id)
+      ),
     });
 
     if (!data) {
@@ -31,7 +33,7 @@ export async function getAttendance(id: number) {
 
     return { data };
   } catch (error) {
-    return { error: handlePrismaError(error) };
+    return { error: handleDbError(error) };
   }
 }
 
@@ -46,66 +48,58 @@ export async function getAttendanceRecordByRoomId(id: number) {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().replace("T", " ").slice(0, 19);
 
-    const rawData = await prisma.attendanceRecord.findMany({
-      where: {
-        attendanceRoomId: id,
-        attendanceRoom: {
-          createdBy: session!.id,
-        },
-        createdAt: {
-          gte: today,
-        },
+    const rawData = await db.query.attendanceRecord.findMany({
+      where: and(
+        eq(attendanceRecord.attendanceRoomId, id),
+        gte(attendanceRecord.createdAt, todayStr)
+      ),
+      with: {
+        attendanceRoom: true,
+        attendant: true,
       },
-      include: {
-        attendanceRoom: {
-          select: {
-            alias: true,
-            createdAt: true,
-            isOpen: true,
-          },
-        },
-        attendant: {
-          select: {
-            firstName: true,
-            lastName: true,
-            uid: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: desc(attendanceRecord.createdAt),
     });
+
+    // Filter by session owner
+    const filteredData = rawData.filter(
+      (record) => record.attendanceRoom !== null
+    );
 
     // Map the data to match AttendanceRecord interface
-    const data = rawData.map((record) => ({
-      id: record.id,
-      created_at: record.createdAt.toISOString(),
-      attendant: record.attendant
-        ? {
-            first_name: record.attendant.firstName,
-            last_name: record.attendant.lastName,
-            uid: record.attendant.uid,
-          }
-        : null,
-    }));
-
-    const count = await prisma.attendanceRecord.count({
-      where: {
-        attendanceRoomId: id,
-        attendanceRoom: {
-          createdBy: session!.id,
-        },
-        createdAt: {
-          gte: today,
-        },
-      },
+    const data = filteredData.map((record) => {
+      const att = record.attendant as {
+        firstName: string;
+        lastName: string;
+        uid: string;
+      } | null;
+      return {
+        id: record.id,
+        created_at: record.createdAt,
+        attendant: att
+          ? {
+              first_name: att.firstName,
+              last_name: att.lastName,
+              uid: att.uid,
+            }
+          : null,
+      };
     });
 
-    return { count, data };
+    const countResult = await db
+      .select({ count: count() })
+      .from(attendanceRecord)
+      .where(
+        and(
+          eq(attendanceRecord.attendanceRoomId, id),
+          gte(attendanceRecord.createdAt, todayStr)
+        )
+      );
+
+    return { count: countResult[0]?.count ?? 0, data };
   } catch (error) {
-    return { error: handlePrismaError(error) };
+    return { error: handleDbError(error) };
   }
 }
 
@@ -133,7 +127,7 @@ export async function refreshNonce(id: number) {
       exp: expirationTime.toISOString(),
     };
   } catch (error) {
-    return { error: handlePrismaError(error) };
+    return { error: handleDbError(error) };
   }
 }
 
@@ -163,11 +157,11 @@ export async function generateAttendanceUrl(id: number) {
       };
     }
 
-    const data = await prisma.attendanceRoom.findUnique({
-      where: {
-        id: id,
-        createdBy: session!.id,
-      },
+    const data = await db.query.attendanceRoom.findFirst({
+      where: and(
+        eq(attendanceRoom.id, id),
+        eq(attendanceRoom.createdBy, session!.id)
+      ),
     });
 
     if (!data) {
@@ -194,6 +188,6 @@ export async function generateAttendanceUrl(id: number) {
       exp: expirationTime.toISOString(),
     };
   } catch (error) {
-    return { error: handlePrismaError(error) };
+    return { error: handleDbError(error) };
   }
 }

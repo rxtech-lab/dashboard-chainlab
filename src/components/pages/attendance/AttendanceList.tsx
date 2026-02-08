@@ -12,7 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import UpdateRoomDialog from "../UpdateRoomDialog";
 import Link from "next/link";
-import { AttendanceRoom } from "@prisma/client";
+import { attendanceRoom } from "@/lib/schema";
+type AttendanceRoom = typeof attendanceRoom.$inferSelect;
 
 export function AttendanceRoomList({ rooms }: { rooms: AttendanceRoom[] }) {
   return (
