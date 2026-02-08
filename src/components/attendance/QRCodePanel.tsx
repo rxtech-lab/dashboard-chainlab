@@ -64,10 +64,6 @@ function CountdownTimer({ exp, roomId }: { exp: string; roomId: number }) {
             duration: 0.8,
             ease: [0.3, 0, 0.2, 1],
           },
-          exit: {
-            delay: 0.5,
-            duration: 0.8,
-          },
         }}
       >
         <RefreshCwIcon className="w-4 h-4 text-sky-500 active:text-yellow-800 hover:text-sky-800" />
@@ -102,11 +98,10 @@ export default function QRCodePanel({
   const fadeInScale = {
     initial: { opacity: 0, scale: 0.95 },
     animate: { opacity: 1, scale: 1 },
-    exit: { opacity: 0, scale: 0.95 },
+    exit: { opacity: 0, scale: 0.95, transition: { duration: 0.15 } },
     transition: {
       duration: 0.2,
-      ease: "easeInOut",
-      exit: { duration: 0.15 },
+      ease: "easeInOut" as const,
     },
   };
 
