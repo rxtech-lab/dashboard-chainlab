@@ -4,11 +4,18 @@ import { getAttendantSignInMessage } from "@/config/config";
 import { signInAsAttendant as signInAsAttendantLib } from "@/lib/attendance";
 import { getAttendanceNonceKey } from "@/lib/attendance.constants";
 import redis from "@/lib/redis";
-import { prisma } from "@/lib/database";
-import { handlePrismaError } from "@/lib/prisma.error";
+import { db } from "@/lib/database";
+import {
+  attendant,
+  attendanceRecord,
+  attendanceRoom,
+  user,
+} from "@/lib/schema";
+import { handleDbError } from "@/lib/db.error";
 import { verifyMessage } from "ethers";
 import { cookies } from "next/headers";
 import { SessionResponse } from "web3-connect-react";
+import { eq, and, gte } from "drizzle-orm";
 
 interface SignInAsAttendantUser {
   firstName: string;
@@ -19,17 +26,18 @@ interface SignInAsAttendantUser {
 
 export async function getAllAttendant(roomId: number) {
   try {
-    const attendants = await prisma.attendant.findMany({
-      where: {
-        adminUser: {
-          rooms: {
-            some: {
-              id: roomId,
-            },
-          },
-        },
-      },
-      select: {
+    // Find the room to get the creator (admin)
+    const room = await db.query.attendanceRoom.findFirst({
+      where: eq(attendanceRoom.id, roomId),
+    });
+
+    if (!room) {
+      return { data: [] };
+    }
+
+    const attendants = await db.query.attendant.findMany({
+      where: eq(attendant.admin, room.createdBy),
+      columns: {
         id: true,
         uid: true,
         firstName: true,
@@ -38,17 +46,17 @@ export async function getAllAttendant(roomId: number) {
       },
     });
 
-    const data = attendants.map((attendant) => ({
-      userId: attendant.uid,
-      id: attendant.id,
-      firstName: attendant.firstName,
-      lastName: attendant.lastName,
-      disabled: !!attendant.walletAddress,
+    const data = attendants.map((a) => ({
+      userId: a.uid,
+      id: a.id,
+      firstName: a.firstName,
+      lastName: a.lastName,
+      disabled: !!a.walletAddress,
     }));
 
     return { data };
   } catch (error) {
-    return { error: handlePrismaError(error) };
+    return { error: handleDbError(error) };
   }
 }
 
@@ -61,33 +69,44 @@ export async function getAttendantByWalletAddress(
       return { data: undefined };
     }
 
-    const query: any = {
-      where: {
-        walletAddress: walletAddress,
-      },
-      select: {
-        id: true,
-        uid: true,
-        firstName: true,
-        lastName: true,
-        walletAddress: true,
-      },
-    };
-
-    // If roomId is provided, only find attendants in that specific room
+    let data;
     if (roomId) {
-      query.where.adminUser = {
-        rooms: {
-          some: {
-            id: roomId,
-          },
+      // Find the room to get the admin
+      const room = await db.query.attendanceRoom.findFirst({
+        where: eq(attendanceRoom.id, roomId),
+      });
+
+      if (!room) {
+        return { data: undefined };
+      }
+
+      data = await db.query.attendant.findFirst({
+        where: and(
+          eq(attendant.walletAddress, walletAddress),
+          eq(attendant.admin, room.createdBy)
+        ),
+        columns: {
+          id: true,
+          uid: true,
+          firstName: true,
+          lastName: true,
+          walletAddress: true,
         },
-      };
+      });
+    } else {
+      data = await db.query.attendant.findFirst({
+        where: eq(attendant.walletAddress, walletAddress),
+        columns: {
+          id: true,
+          uid: true,
+          firstName: true,
+          lastName: true,
+          walletAddress: true,
+        },
+      });
     }
 
-    const data = await prisma.attendant.findFirst(query);
-
-    if (data === null) {
+    if (!data) {
       return { data: undefined };
     }
 
@@ -101,7 +120,7 @@ export async function getAttendantByWalletAddress(
       },
     };
   } catch (error) {
-    return { error: handlePrismaError(error) };
+    return { error: handleDbError(error) };
   }
 }
 
@@ -116,20 +135,19 @@ export async function hasAttendantTakenAttendanceForToday(
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().replace("T", " ").slice(0, 19);
 
-    const data = await prisma.attendanceRecord.findFirst({
-      where: {
-        attendantId,
-        attendanceRoomId: roomId,
-        createdAt: {
-          gte: today,
-        },
-      },
+    const data = await db.query.attendanceRecord.findFirst({
+      where: and(
+        eq(attendanceRecord.attendantId, attendantId),
+        eq(attendanceRecord.attendanceRoomId, roomId),
+        gte(attendanceRecord.createdAt, todayStr)
+      ),
     });
 
     return { data };
   } catch (error) {
-    return { error: handlePrismaError(error) };
+    return { error: handleDbError(error) };
   }
 }
 
@@ -153,19 +171,21 @@ export async function getAttendantByWalletAddressForRoom(
       return { data: undefined };
     }
 
-    const data = await prisma.attendant.findFirst({
-      where: {
-        walletAddress: walletAddress,
-        // Only include attendants that belong to the specified room's admin
-        adminUser: {
-          rooms: {
-            some: {
-              id: roomId,
-            },
-          },
-        },
-      },
-      select: {
+    // Find the room to get the admin
+    const room = await db.query.attendanceRoom.findFirst({
+      where: eq(attendanceRoom.id, roomId),
+    });
+
+    if (!room) {
+      return { data: undefined };
+    }
+
+    const data = await db.query.attendant.findFirst({
+      where: and(
+        eq(attendant.walletAddress, walletAddress),
+        eq(attendant.admin, room.createdBy)
+      ),
+      columns: {
         id: true,
         uid: true,
         firstName: true,
@@ -174,7 +194,7 @@ export async function getAttendantByWalletAddressForRoom(
       },
     });
 
-    if (data === null) {
+    if (!data) {
       return { data: undefined };
     }
 
@@ -188,12 +208,12 @@ export async function getAttendantByWalletAddressForRoom(
       },
     };
   } catch (error) {
-    return { error: handlePrismaError(error) };
+    return { error: handleDbError(error) };
   }
 }
 
 export async function takeAttendance(
-  user: SignInAsAttendantUser,
+  userInfo: SignInAsAttendantUser,
   roomId: number,
   previousNonce: string,
   signature: string,
@@ -213,7 +233,7 @@ export async function takeAttendance(
     };
   }
 
-  const message = getAttendantSignInMessage(user, nonce as string);
+  const message = getAttendantSignInMessage(userInfo, nonce as string);
   const messageAddress = verifyMessage(message, signature);
   if (messageAddress !== address) {
     return {
@@ -232,20 +252,20 @@ export async function takeAttendance(
     );
 
     // Get the attendant we're trying to register
-    const attendant = await prisma.attendant.findFirst({
-      where: { id: user.id },
+    const foundAttendant = await db.query.attendant.findFirst({
+      where: eq(attendant.id, userInfo.id),
     });
 
-    if (!attendant) {
+    if (!foundAttendant) {
       return { error: "Attendant not found" };
     }
 
     // If attendant has no wallet address, register it
-    if (attendant.walletAddress === null) {
+    if (foundAttendant.walletAddress === null) {
       // If this wallet is already registered to someone else
       if (
         userWithWalletAddress.data?.address &&
-        userWithWalletAddress.data.id !== user.id
+        userWithWalletAddress.data.id !== userInfo.id
       ) {
         return {
           error:
@@ -253,45 +273,33 @@ export async function takeAttendance(
         };
       }
 
-      const updatedAttendant = await prisma.attendant.update({
-        where: {
-          id: user.id,
-          walletAddress: null,
-        },
-        data: {
-          walletAddress: address,
-        },
-      });
-
-      // Use the updated attendant's ID
-      const userId = updatedAttendant.id;
+      await db
+        .update(attendant)
+        .set({ walletAddress: address })
+        .where(eq(attendant.id, userInfo.id));
 
       // Add the attendance record
-      await prisma.attendanceRecord.create({
-        data: {
-          attendanceRoomId: roomId,
-          attendantId: userId,
-        },
+      await db.insert(attendanceRecord).values({
+        attendanceRoomId: roomId,
+        attendantId: userInfo.id,
       });
 
       return { error: null };
     }
     // If this attendant already has a wallet but it's different
-    else if (attendant.walletAddress !== address) {
+    else if (foundAttendant.walletAddress !== address) {
       return { error: "This user already has a registered wallet address" };
     }
     // If this attendant has this wallet address, just record attendance
     else {
-      await prisma.attendanceRecord.create({
-        data: {
-          attendanceRoomId: roomId,
-          attendantId: attendant.id,
-        },
+      await db.insert(attendanceRecord).values({
+        attendanceRoomId: roomId,
+        attendantId: foundAttendant.id,
       });
 
       return { error: null };
     }
   } catch (error) {
-    return { error: handlePrismaError(error) };
+    return { error: handleDbError(error) };
   }
 }

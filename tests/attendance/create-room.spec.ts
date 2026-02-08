@@ -1,37 +1,38 @@
-import { prisma } from "@/lib/database";
+import { db } from "@/lib/database";
+import { user, attendanceRoom } from "@/lib/schema";
 import { expect, test } from "@playwright/test";
 import { ethers } from "ethers";
-import { FastifyInstance } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { signInWithWallet } from "../helpers/signInHelper";
-import { User } from "@prisma/client";
 import { createMetaMaskController } from "../metamaskServer";
+
 const adminWallet = ethers.Wallet.createRandom();
 let server: FastifyInstance;
 
 const [attendantWallet] = [ethers.Wallet.createRandom()];
-let admin: User;
+let admin: typeof user.$inferSelect;
 
 test.beforeEach(async () => {
   // add admin wallet to database
-  admin = await prisma.user.create({
-    data: {
+  const [inserted] = await db
+    .insert(user)
+    .values({
       walletAddress: adminWallet.address,
       role: "ADMIN",
-    },
-  });
+    })
+    .returning();
+  admin = inserted;
 
   // add attendant wallet to database
-  await prisma.user.create({
-    data: {
-      walletAddress: attendantWallet.address,
-      role: "USER",
-    },
+  await db.insert(user).values({
+    walletAddress: attendantWallet.address,
+    role: "USER",
   });
 });
 
 test.afterEach(async () => {
-  await prisma.attendanceRoom.deleteMany();
-  await prisma.user.deleteMany();
+  await db.delete(attendanceRoom);
+  await db.delete(user);
 
   await server.close();
 });
@@ -116,12 +117,13 @@ test.describe("room", () => {
 test.describe("pagination", () => {
   test("create a room", async ({ page }) => {
     // write 21 rooms in the database
-    await prisma.attendanceRoom.createMany({
-      data: Array.from({ length: 21 }, (_, i) => ({
-        alias: `Test Room ${i + 1}`,
-        createdBy: admin.id,
-      })),
-    });
+    const rooms = Array.from({ length: 21 }, (_, i) => ({
+      alias: `Test Room ${i + 1}`,
+      createdBy: admin.id,
+    }));
+    for (const room of rooms) {
+      await db.insert(attendanceRoom).values(room);
+    }
 
     const response = await createMetaMaskController();
     server = response.server;

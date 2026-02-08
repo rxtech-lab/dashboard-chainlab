@@ -54,9 +54,9 @@ export default async function TakeAttendancePage({ params }: { params: any }) {
   if (todayAttendance.data) {
     return (
       <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-        <div className="w-full max-w-md lg:bg-white rounded-lg lg:shadow-sm p-8 text-center">
+        <div className="w-full max-w-md lg:bg-white rounded-lg lg:shadow-xs p-8 text-center">
           <AttendanceSuccessMessage
-            timestamp={todayAttendance.data.createdAt.toISOString()}
+            timestamp={todayAttendance.data.createdAt}
           />
           <AttendanceSignOutButton />
         </div>
@@ -69,7 +69,7 @@ export default async function TakeAttendancePage({ params }: { params: any }) {
       className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center"
       data-testid="take-attendance-page"
     >
-      <div className="w-full max-w-md mx-auto lg:bg-white rounded-lg lg:shadow-sm p-8 min-h-screen lg:min-h-[28rem] flex flex-col">
+      <div className="w-full max-w-md mx-auto lg:bg-white rounded-lg lg:shadow-xs p-8 min-h-screen lg:min-h-[28rem] flex flex-col">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Take Attendance</h1>
           <p className="mt-2 text-sm text-gray-600">

@@ -1,4 +1,5 @@
-import { prisma } from "@/lib/database";
+import { db } from "@/lib/database";
+import { user } from "@/lib/schema";
 import { expect, test } from "@playwright/test";
 import { ethers } from "ethers";
 import { FastifyInstance } from "fastify";
@@ -12,24 +13,20 @@ const [attendantWallet] = [ethers.Wallet.createRandom()];
 
 test.beforeEach(async () => {
   // add admin wallet to database
-  await prisma.user.create({
-    data: {
-      walletAddress: adminWallet.address,
-      role: "ADMIN",
-    },
+  await db.insert(user).values({
+    walletAddress: adminWallet.address,
+    role: "ADMIN",
   });
 
   // add attendant wallet to database
-  await prisma.user.create({
-    data: {
-      walletAddress: attendantWallet.address,
-      role: "USER",
-    },
+  await db.insert(user).values({
+    walletAddress: attendantWallet.address,
+    role: "USER",
   });
 });
 
 test.afterEach(async () => {
-  await prisma.user.deleteMany();
+  await db.delete(user);
   await server.close();
 });
 

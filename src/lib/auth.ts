@@ -9,8 +9,11 @@ import { createSecretKey } from "crypto";
 import redis from "./redis";
 import { Config, getAdminSignInMessage } from "@/config/config";
 import dayjs from "dayjs";
-import { prisma } from "./database";
-import { Role, User } from "@prisma/client";
+import { db } from "./database";
+import { user as userTable } from "./schema";
+import { eq } from "drizzle-orm";
+
+export type User = typeof userTable.$inferSelect;
 
 export async function isAuthenticated(cookie: ReadonlyRequestCookies) {
   const session = await getSession(cookie);
@@ -34,12 +37,15 @@ export async function getSession(
       isAuth: false,
     };
   }
-  const value = await jwtVerify(
-    token.value,
-    createSecretKey(process.env.JWT_SECRET!, "utf-8")
-  );
-
-  return value.payload as any;
+  try {
+    const value = await jwtVerify(
+      token.value,
+      createSecretKey(process.env.JWT_SECRET!, "utf-8")
+    );
+    return value.payload as any;
+  } catch {
+    return { isAuth: false };
+  }
 }
 
 /**
@@ -129,21 +135,19 @@ async function adminOnly(
   walletAddress: string
 ): Promise<[boolean, User | null, string | null]> {
   try {
-    const user = await prisma.user.findFirst({
-      where: {
-        walletAddress: walletAddress,
-      },
+    const foundUser = await db.query.user.findFirst({
+      where: eq(userTable.walletAddress, walletAddress),
     });
 
-    if (!user) {
+    if (!foundUser) {
       return [false, null, "User not found"];
     }
 
-    if (user.role !== Role.ADMIN) {
+    if (foundUser.role !== "ADMIN") {
       return [false, null, "User is not an admin"];
     }
 
-    return [true, user, null];
+    return [true, foundUser, null];
   } catch (error) {
     console.error(error);
     return [false, null, "Database error occurred"];
