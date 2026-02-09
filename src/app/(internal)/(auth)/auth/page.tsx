@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function page() {
   return (
-    <div>
+    <div className="w-full h-full">
       <AuthenticationModal />
     </div>
   );
