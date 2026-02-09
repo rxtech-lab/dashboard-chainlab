@@ -33,7 +33,7 @@ export async function getSemester(id: number) {
 export async function getClasses(
   semesterId: number,
   page: number,
-  limit: number
+  limit: number,
 ) {
   try {
     const cookie = await cookies();
@@ -47,11 +47,16 @@ export async function getClasses(
       db.query.classTable.findMany({
         where: and(
           eq(classTable.semesterId, semesterId),
-          eq(classTable.createdBy, session.id)
+          eq(classTable.createdBy, session.id),
         ),
         orderBy: [desc(classTable.createdAt), desc(classTable.id)],
         offset,
         limit,
+        with: {
+          semester: {
+            columns: { name: true },
+          },
+        },
       }),
       db
         .select({ count: count() })
@@ -59,8 +64,8 @@ export async function getClasses(
         .where(
           and(
             eq(classTable.semesterId, semesterId),
-            eq(classTable.createdBy, session.id)
-          )
+            eq(classTable.createdBy, session.id),
+          ),
         ),
     ]);
 
@@ -120,7 +125,7 @@ export async function createClass(data: {
 
 export async function updateClass(
   id: number,
-  data: { name: string }
+  data: { name: string },
 ): Promise<ActionResponse> {
   try {
     const cookie = await cookies();

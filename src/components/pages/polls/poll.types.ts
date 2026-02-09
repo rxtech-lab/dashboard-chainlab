@@ -20,7 +20,7 @@ export const pollOptionSchema = z.object({
 export const pollQuestionSchema = z.object({
   questionText: z.string().min(1, "Question text is required"),
   questionType: z.enum(["SELECT", "MULTIPLE_CHOICE", "TEXT", "BOOLEAN"]),
-  isRequired: z.boolean().default(true),
+  isRequired: z.boolean(),
   sortOrder: z.number().optional(),
   options: z.array(pollOptionSchema).optional(),
 });
@@ -30,10 +30,12 @@ export const createPollSchema = z
   .object({
     title: z.string().min(2, "Title must be at least 2 characters"),
     description: z.string().optional(),
-    requireIdentification: z.boolean().default(false),
+    requireIdentification: z.boolean(),
     semesterId: z.number().optional(),
     classId: z.number().optional(),
-    questions: z.array(pollQuestionSchema).min(1, "At least one question is required"),
+    questions: z
+      .array(pollQuestionSchema)
+      .min(1, "At least one question is required"),
   })
   .refine(
     (data) => {
@@ -52,7 +54,7 @@ export const createPollSchema = z
       message:
         "SELECT and MULTIPLE_CHOICE questions must have at least 2 options",
       path: ["questions"],
-    }
+    },
   );
 
 export type CreatePollFormValues = z.infer<typeof createPollSchema>;
@@ -75,7 +77,9 @@ export const pollAnswerSchema = z.object({
 
 // Submit response schema
 export const pollResponseSchema = z.object({
-  responses: z.array(pollAnswerSchema).min(1, "At least one answer is required"),
+  responses: z
+    .array(pollAnswerSchema)
+    .min(1, "At least one answer is required"),
   attendantId: z.number().optional(), // Only for identified polls
 });
 

@@ -16,6 +16,7 @@ import { Edit2Icon } from "lucide-react";
 type PollBase = typeof poll.$inferSelect;
 type Poll = PollBase & {
   semester?: { id: number; name: string } | null;
+  classItem?: { id: number; name: string } | null;
   questions?: { id: number }[];
 };
 

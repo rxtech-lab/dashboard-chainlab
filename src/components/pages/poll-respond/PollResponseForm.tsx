@@ -15,7 +15,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { pollResponseSchema, type PollResponseFormValues } from "../poll.types";
+import {
+  pollResponseSchema,
+  type PollResponseFormValues,
+} from "../polls/poll.types";
 import { submitPollResponse } from "@/app/(public)/poll/[id]/respond/actions";
 import { useToast } from "@/hooks/use-toast";
 import Spinner from "@/components/ui/spinner";

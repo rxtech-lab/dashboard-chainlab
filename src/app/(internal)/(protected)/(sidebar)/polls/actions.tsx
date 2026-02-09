@@ -52,7 +52,7 @@ export async function createPoll(
     if (!validation.success) {
       return {
         success: false,
-        error: validation.error.errors[0]?.message || "Invalid data",
+        error: validation.error.issues[0]?.message || "Invalid data",
       };
     }
 
@@ -276,7 +276,7 @@ export async function updatePollDetails(
     if (!validation.success) {
       return {
         success: false,
-        error: validation.error.errors[0]?.message || "Invalid data",
+        error: validation.error.issues[0]?.message || "Invalid data",
       };
     }
 

@@ -21,7 +21,10 @@ import {
   createPoll,
   getPolls,
 } from "@/app/(internal)/(protected)/(sidebar)/polls/actions";
-import { getAdminSemesters, getAdminClasses } from "@/app/(internal)/(protected)/actions";
+import {
+  getAdminSemesters,
+  getAdminClasses,
+} from "@/app/(internal)/(protected)/actions";
 import { useToast } from "@/hooks/use-toast";
 import { createPollSchema, type CreatePollFormValues } from "./poll.types";
 import { useRouter } from "next/navigation";

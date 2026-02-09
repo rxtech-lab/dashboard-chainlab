@@ -24,12 +24,16 @@ import useSWR from "swr";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  semesterId: z.number({ required_error: "Please select a semester" }),
+  semesterId: z.number({ message: "Please select a semester" }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-export default function CreateClassDialog() {
+export default function CreateClassDialog({
+  semesterId,
+}: {
+  semesterId?: number;
+}) {
   const [open, setOpen] = useState(false);
   const { data: semestersData } = useSWR(
     open ? "/api/semesters" : null,
@@ -43,7 +47,7 @@ export default function CreateClassDialog() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema as any),
-    defaultValues: { name: "", semesterId: undefined },
+    defaultValues: { name: "", semesterId: semesterId || undefined },
   });
   const toast = useToast();
   const router = useRouter();

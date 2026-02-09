@@ -13,7 +13,11 @@ import Spinner from "@/components/ui/spinner";
 import { Card } from "@/components/ui/card";
 import { CircleAlertIcon } from "lucide-react";
 
-export default function PollRespondPage({ params }: any) {
+export default function PollRespondPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
   const searchParams = useSearchParams();
   const nonce = searchParams.get("nonce");
