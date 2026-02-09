@@ -33,8 +33,8 @@ export function DesktopAuthModal({ sdk, connect }: Props) {
       }}
       className="relative"
     >
-      <Card className="w-full h-full min-h-[500px] flex !shadow-xl rounded-3xl overflow-hidden border-0">
-        <div className="relative w-full">
+      <Card className="w-full h-[600px] flex !shadow-xl rounded-3xl overflow-hidden border-0 p-0">
+        <div className="relative w-full h-full">
           {/* Right Panel */}
           <motion.div
             initial={{ x: "-50%" }}

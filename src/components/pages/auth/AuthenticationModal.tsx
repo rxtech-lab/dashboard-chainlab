@@ -42,20 +42,21 @@ export default function AuthenticationModal() {
               variant: "destructive",
             });
             throw new Error(error);
+          }
+
+          toast({
+            title: "Success",
+            description: "Signed in successfully",
+            variant: "success",
+          });
+          if (redirect) {
+            router.push(redirect);
           } else {
-            toast({
-              title: "Success",
-              description: "Signed in successfully",
-              variant: "success",
-            });
-            if (redirect) {
-              router.push(redirect);
-            } else {
-              router.push("/");
-            }
+            router.push("/");
           }
         },
       });
+      // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     } catch (error: any) {
       toast({
         title: "Error",
@@ -66,11 +67,11 @@ export default function AuthenticationModal() {
   };
 
   return (
-    <div className="w-auto mx-auto p-4 h-full flex items-center justify-center">
+    <div className="w-full h-full flex items-center justify-center p-4">
       <div className="md:block hidden">
         <DesktopAuthModal sdk={sdk} connect={connect} />
       </div>
-      <div className="md:hidden block">
+      <div className="md:hidden block w-full">
         <MobileAuthModal sdk={sdk} connect={connect} />
       </div>
     </div>

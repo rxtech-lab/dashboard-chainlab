@@ -30,7 +30,7 @@ export function MobileAuthModal({ sdk, connect }: Props) {
       }}
       className="w-full"
     >
-      <Card className="w-full min-h-[500px] !shadow-none rounded-3xl overflow-hidden border-t border-l border-r md:border-0 mt-96">
+      <Card className="w-full h-[600px] !shadow-none rounded-3xl overflow-hidden border-t border-l border-r md:border-0 p-0">
         <div className="flex flex-col w-full h-full">
           {/* Top Panel */}
           <motion.div
