@@ -1,0 +1,1 @@
+ALTER TABLE `poll` ADD `class_id` integer REFERENCES class(id);

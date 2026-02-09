@@ -23,8 +23,16 @@ export async function getAttendance(id: number) {
     const data = await db.query.attendanceRoom.findFirst({
       where: and(
         eq(attendanceRoom.id, id),
-        eq(attendanceRoom.createdBy, session!.id)
+        eq(attendanceRoom.createdBy, session!.id),
       ),
+      with: {
+        semester: {
+          columns: { id: true, name: true },
+        },
+        classItem: {
+          columns: { id: true, name: true },
+        },
+      },
     });
 
     if (!data) {
@@ -53,7 +61,7 @@ export async function getAttendanceRecordByRoomId(id: number) {
     const rawData = await db.query.attendanceRecord.findMany({
       where: and(
         eq(attendanceRecord.attendanceRoomId, id),
-        gte(attendanceRecord.createdAt, todayStr)
+        gte(attendanceRecord.createdAt, todayStr),
       ),
       with: {
         attendanceRoom: true,
@@ -64,7 +72,7 @@ export async function getAttendanceRecordByRoomId(id: number) {
 
     // Filter by session owner
     const filteredData = rawData.filter(
-      (record) => record.attendanceRoom !== null
+      (record) => record.attendanceRoom !== null,
     );
 
     // Map the data to match AttendanceRecord interface
@@ -93,8 +101,8 @@ export async function getAttendanceRecordByRoomId(id: number) {
       .where(
         and(
           eq(attendanceRecord.attendanceRoomId, id),
-          gte(attendanceRecord.createdAt, todayStr)
-        )
+          gte(attendanceRecord.createdAt, todayStr),
+        ),
       );
 
     return { count: countResult[0]?.count ?? 0, data };
@@ -115,7 +123,7 @@ export async function refreshNonce(id: number) {
     const key = getAttendanceNonceKey(id);
     const nonce = uuidv4();
     const expirationTime = new Date(
-      Date.now() + Config.Attendance.nonceExpiration * 1000
+      Date.now() + Config.Attendance.nonceExpiration * 1000,
     );
 
     await redis.set(key, nonce, {
@@ -160,7 +168,7 @@ export async function generateAttendanceUrl(id: number) {
     const data = await db.query.attendanceRoom.findFirst({
       where: and(
         eq(attendanceRoom.id, id),
-        eq(attendanceRoom.createdBy, session!.id)
+        eq(attendanceRoom.createdBy, session!.id),
       ),
     });
 
@@ -180,7 +188,7 @@ export async function generateAttendanceUrl(id: number) {
 
     const currentTime = new Date();
     const expirationTime = new Date(
-      currentTime.getTime() + Config.Attendance.nonceExpiration * 1000
+      currentTime.getTime() + Config.Attendance.nonceExpiration * 1000,
     );
 
     return {

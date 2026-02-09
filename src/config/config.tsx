@@ -1,4 +1,11 @@
-import { NotebookPenIcon } from "lucide-react";
+import {
+  NotebookPenIcon,
+  CalendarIcon,
+  UsersIcon,
+  ClipboardListIcon,
+  GraduationCapIcon,
+  BarChart3Icon,
+} from "lucide-react";
 
 export const Config = {
   Authentication: {
@@ -15,6 +22,10 @@ export const Config = {
     dataAutoRefreshInterval: 1000 * 10,
     cookieExpiration: 60 * 60,
   },
+  Poll: {
+    nonceExpiration: 300,
+    dataAutoRefreshInterval: 1000 * 10,
+  },
 };
 
 export const SidebarItems = {
@@ -27,6 +38,31 @@ export const SidebarItems = {
           title: "Attendance",
           url: "/",
           icon: <NotebookPenIcon />,
+        },
+        {
+          title: "Polls",
+          url: "/polls",
+          icon: <BarChart3Icon />,
+        },
+        {
+          title: "Semesters",
+          url: "/semesters",
+          icon: <CalendarIcon />,
+        },
+        {
+          title: "Classes",
+          url: "/classes",
+          icon: <GraduationCapIcon />,
+        },
+        {
+          title: "Students",
+          url: "/students",
+          icon: <UsersIcon />,
+        },
+        {
+          title: "Records",
+          url: "/records",
+          icon: <ClipboardListIcon />,
         },
       ],
     },
@@ -55,7 +91,7 @@ export function getAdminSignInMessage(nonce: string) {
  */
 export function getAttendantSignInMessage(
   user: { firstName: string; lastName: string; userId: string },
-  nonce: string
+  nonce: string,
 ) {
   return `I, ${user.firstName} ${user.lastName} (ID: ${user.userId}), hereby confirm my attendance by signing this message.\n\nBy signing this message, I understand that this action cannot be undone and will be permanently recorded.\n\nNonce: ${nonce}`;
 }

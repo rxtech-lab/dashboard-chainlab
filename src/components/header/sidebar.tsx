@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Sidebar,
   SidebarContent,
@@ -13,10 +15,13 @@ import {
 import { Config, SidebarItems } from "@/config/config";
 import { GalleryVerticalEnd } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-export function AppSidebar() {
+export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname();
+
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -42,10 +47,14 @@ export function AppSidebar() {
               <SidebarMenu>
                 {nav.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton 
+                      asChild 
+                      tooltip={item.title}
+                      isActive={pathname === item.url || pathname.startsWith(`${item.url}/`)}
+                    >
                       <Link href={item.url}>
                         {item.icon}
-                        {item.title}
+                        <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

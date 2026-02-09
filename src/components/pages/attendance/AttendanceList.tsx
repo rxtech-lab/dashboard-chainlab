@@ -13,7 +13,11 @@ import { useRouter } from "next/navigation";
 import UpdateRoomDialog from "../UpdateRoomDialog";
 import Link from "next/link";
 import { attendanceRoom } from "@/lib/schema";
-type AttendanceRoom = typeof attendanceRoom.$inferSelect;
+type AttendanceRoomBase = typeof attendanceRoom.$inferSelect;
+type AttendanceRoom = AttendanceRoomBase & {
+  semester?: { id: number; name: string } | null;
+  classItem?: { id: number; name: string } | null;
+};
 
 export function AttendanceRoomList({ rooms }: { rooms: AttendanceRoom[] }) {
   return (
@@ -75,7 +79,7 @@ function AttendanceRoomCard({ room }: AttendanceRoomCardProps) {
 
   const handleDelete = async () => {
     const confirm = window.confirm(
-      "Are you sure you want to delete this attendance room?"
+      "Are you sure you want to delete this attendance room?",
     );
     if (!confirm) return;
     setIsLoading(true);
@@ -128,6 +132,17 @@ function AttendanceRoomCard({ room }: AttendanceRoomCardProps) {
                 {room.alias}
               </h3>
               <p className="text-sm text-gray-500 mt-1">Room ID: {room.id}</p>
+              {room.classItem && (
+                <p className="text-sm text-blue-600 mt-1">
+                  Class: {room.classItem.name}
+                  {room.semester && ` (${room.semester.name})`}
+                </p>
+              )}
+              {!room.classItem && room.semester && (
+                <p className="text-sm text-gray-600 mt-1">
+                  Semester: {room.semester.name}
+                </p>
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
@@ -148,7 +163,12 @@ function AttendanceRoomCard({ room }: AttendanceRoomCardProps) {
                 peer-checked:bg-blue-600"
             ></div>
           </label>
-          <UpdateRoomDialog roomId={room.id} currentAlias={room.alias} />
+          <UpdateRoomDialog
+            roomId={room.id}
+            currentAlias={room.alias}
+            currentSemesterId={room.semesterId}
+            currentClassId={room.classId}
+          />
           <button
             onClick={handleDelete}
             className="text-gray-400 hover:text-red-600 transition-colors duration-200"

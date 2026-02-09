@@ -7,7 +7,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useAttendanceRecord } from "@/hooks/useAttendanceRecord";
 import { useAttendanceUrl } from "@/hooks/useAttendanceUrl";
 import { attendanceRoom } from "@/lib/schema";
-type AttendanceRoom = typeof attendanceRoom.$inferSelect;
+type AttendanceRoomBase = typeof attendanceRoom.$inferSelect;
+type AttendanceRoom = AttendanceRoomBase & {
+  semester?: { id: number; name: string } | null;
+  classItem?: { id: number; name: string } | null;
+};
 import { motion } from "motion/react";
 import dynamic from "next/dynamic";
 import { useState } from "react";
@@ -20,7 +24,7 @@ const QRCodePanel = dynamic(
   () => import("../../attendance/QRCodePanel").then((mod) => mod.default),
   {
     ssr: false,
-  }
+  },
 );
 
 interface AttendanceDetailViewProps {
@@ -87,6 +91,8 @@ export default function AttendanceDetailView({
           isLoading={isLoading}
           isOpen={isOpen}
           handleToggle={handleToggle}
+          semesterId={room.semesterId}
+          classId={room.classId}
         />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -110,6 +116,17 @@ export default function AttendanceDetailView({
                   {room.alias}
                 </h1>
                 <p className="text-sm text-gray-500">Room ID: {room.id}</p>
+                {room.classItem && (
+                  <p className="text-sm text-blue-600 mt-1">
+                    Class: {room.classItem.name}
+                    {room.semester && ` (${room.semester.name})`}
+                  </p>
+                )}
+                {!room.classItem && room.semester && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    Semester: {room.semester.name}
+                  </p>
+                )}
               </div>
               <div className="hidden md:block">
                 <RoomActions
@@ -119,6 +136,8 @@ export default function AttendanceDetailView({
                   isLoading={isLoading}
                   isDisabled={isLoading}
                   handleToggle={handleToggle}
+                  semesterId={room.semesterId}
+                  classId={room.classId}
                 />
               </div>
             </div>

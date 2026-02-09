@@ -1,5 +1,5 @@
 import { db } from "@/lib/database";
-import { user, attendanceRoom } from "@/lib/schema";
+import { user, attendanceRoom, studentClass, classTable, semester } from "@/lib/schema";
 import { expect, test } from "@playwright/test";
 import { ethers } from "ethers";
 import type { FastifyInstance } from "fastify";
@@ -31,7 +31,10 @@ test.beforeEach(async () => {
 });
 
 test.afterEach(async () => {
+  await db.delete(studentClass);
   await db.delete(attendanceRoom);
+  await db.delete(classTable);
+  await db.delete(semester);
   await db.delete(user);
 
   await server.close();
