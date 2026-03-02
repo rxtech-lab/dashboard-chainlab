@@ -9,12 +9,11 @@ import {
   attendant,
   attendanceRecord,
   attendanceRoom,
-  user,
 } from "@/lib/schema";
 import { handleDbError } from "@/lib/db.error";
 import { verifyMessage } from "ethers";
 import { cookies } from "next/headers";
-import { SessionResponse } from "web3-connect-react";
+import type { SessionResponse } from "web3-connect-react";
 import { eq, and, gte } from "drizzle-orm";
 
 interface SignInAsAttendantUser {
@@ -69,6 +68,8 @@ export async function getAttendantByWalletAddress(
       return { data: undefined };
     }
 
+    const normalizedAddress = walletAddress.toLowerCase();
+
     let data;
     if (roomId) {
       // Find the room to get the admin
@@ -82,7 +83,7 @@ export async function getAttendantByWalletAddress(
 
       data = await db.query.attendant.findFirst({
         where: and(
-          eq(attendant.walletAddress, walletAddress),
+          eq(attendant.walletAddress, normalizedAddress),
           eq(attendant.admin, room.createdBy)
         ),
         columns: {
@@ -95,7 +96,7 @@ export async function getAttendantByWalletAddress(
       });
     } else {
       data = await db.query.attendant.findFirst({
-        where: eq(attendant.walletAddress, walletAddress),
+        where: eq(attendant.walletAddress, normalizedAddress),
         columns: {
           id: true,
           uid: true,
@@ -171,6 +172,8 @@ export async function getAttendantByWalletAddressForRoom(
       return { data: undefined };
     }
 
+    const normalizedAddress = walletAddress.toLowerCase();
+
     // Find the room to get the admin
     const room = await db.query.attendanceRoom.findFirst({
       where: eq(attendanceRoom.id, roomId),
@@ -182,7 +185,7 @@ export async function getAttendantByWalletAddressForRoom(
 
     const data = await db.query.attendant.findFirst({
       where: and(
-        eq(attendant.walletAddress, walletAddress),
+        eq(attendant.walletAddress, normalizedAddress),
         eq(attendant.admin, room.createdBy)
       ),
       columns: {
@@ -219,37 +222,45 @@ export async function takeAttendance(
   signature: string,
   address: string
 ) {
+  // Normalize Ethereum address to lowercase for case-insensitive comparison
+  const normalizedAddress = address.toLowerCase();
+
   const nonceKey = getAttendanceNonceKey(roomId);
   const nonce = await redis.get(nonceKey);
   if (!nonce) {
-    return {
-      error: "Nonce not found",
-    };
+    console.log("[takeAttendance] Nonce not found in Redis", { roomId });
+    return { error: "Nonce not found" };
   }
 
   if (nonce !== previousNonce) {
-    return {
-      error: "Nonce mismatch",
-    };
+    console.log("[takeAttendance] Nonce mismatch", {
+      roomId,
+      expected: nonce,
+      received: previousNonce,
+    });
+    return { error: "Nonce mismatch" };
   }
 
   const message = getAttendantSignInMessage(userInfo, nonce as string);
-  const messageAddress = verifyMessage(message, signature);
-  if (messageAddress !== address) {
-    return {
-      error: "Invalid signature",
-    };
+  const messageAddress = verifyMessage(message, signature).toLowerCase();
+  if (messageAddress !== normalizedAddress) {
+    console.log("[takeAttendance] Invalid signature", {
+      messageAddress,
+      normalizedAddress,
+    });
+    return { error: "Invalid signature" };
   }
+
+  console.log("[takeAttendance] Nonce & signature validated", {
+    roomId,
+    address: normalizedAddress,
+    userId: userInfo.userId,
+  });
 
   try {
     // Check if the wallet is registered to ANY attendant
-    const userWithWalletAddress = await getAttendantByWalletAddress(address);
-
-    // Check if the wallet is registered to an attendant in THIS room
-    const userInCurrentRoom = await getAttendantByWalletAddress(
-      address,
-      roomId
-    );
+    const userWithWalletAddress =
+      await getAttendantByWalletAddress(normalizedAddress);
 
     // Get the attendant we're trying to register
     const foundAttendant = await db.query.attendant.findFirst({
@@ -257,8 +268,17 @@ export async function takeAttendance(
     });
 
     if (!foundAttendant) {
+      console.log("[takeAttendance] Attendant not found", {
+        id: userInfo.id,
+      });
       return { error: "Attendant not found" };
     }
+
+    console.log("[takeAttendance] Found attendant", {
+      id: foundAttendant.id,
+      storedWallet: foundAttendant.walletAddress,
+      providedAddress: normalizedAddress,
+    });
 
     // If attendant has no wallet address, register it
     if (foundAttendant.walletAddress === null) {
@@ -267,6 +287,10 @@ export async function takeAttendance(
         userWithWalletAddress.data?.address &&
         userWithWalletAddress.data.id !== userInfo.id
       ) {
+        console.log("[takeAttendance] Wallet conflict", {
+          existingId: userWithWalletAddress.data.id,
+          requestedId: userInfo.id,
+        });
         return {
           error:
             "This wallet address is already registered to another attendant",
@@ -275,31 +299,62 @@ export async function takeAttendance(
 
       await db
         .update(attendant)
-        .set({ walletAddress: address })
+        .set({ walletAddress: normalizedAddress })
         .where(eq(attendant.id, userInfo.id));
 
       // Add the attendance record
-      await db.insert(attendanceRecord).values({
-        attendanceRoomId: roomId,
+      const insertResult = await db
+        .insert(attendanceRecord)
+        .values({
+          attendanceRoomId: roomId,
+          attendantId: userInfo.id,
+        })
+        .returning({ id: attendanceRecord.id });
+
+      console.log("[takeAttendance] New attendant registered", {
         attendantId: userInfo.id,
+        roomId,
+        insertedRecordId: insertResult[0]?.id,
       });
+
+      if (!insertResult.length) {
+        return { error: "Failed to save attendance record" };
+      }
 
       return { error: null };
     }
+
     // If this attendant already has a wallet but it's different
-    else if (foundAttendant.walletAddress !== address) {
+    if (foundAttendant.walletAddress.toLowerCase() !== normalizedAddress) {
+      console.log("[takeAttendance] Wallet mismatch", {
+        stored: foundAttendant.walletAddress,
+        provided: normalizedAddress,
+      });
       return { error: "This user already has a registered wallet address" };
     }
+
     // If this attendant has this wallet address, just record attendance
-    else {
-      await db.insert(attendanceRecord).values({
+    const insertResult = await db
+      .insert(attendanceRecord)
+      .values({
         attendanceRoomId: roomId,
         attendantId: foundAttendant.id,
-      });
+      })
+      .returning({ id: attendanceRecord.id });
 
-      return { error: null };
+    console.log("[takeAttendance] Returning attendant", {
+      attendantId: foundAttendant.id,
+      roomId,
+      insertedRecordId: insertResult[0]?.id,
+    });
+
+    if (!insertResult.length) {
+      return { error: "Failed to save attendance record" };
     }
+
+    return { error: null };
   } catch (error) {
+    console.error("[takeAttendance] DB error", { roomId, address: normalizedAddress }, error);
     return { error: handleDbError(error) };
   }
 }
